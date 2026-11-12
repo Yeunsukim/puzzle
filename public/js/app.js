@@ -19,7 +19,22 @@ function go(path) {
   if (location.hash === '#' + path) route();
   else location.hash = path;
 }
-window.addEventListener('hashchange', route);
+
+// 게임 중에 다른 화면으로 가려 하면 먼저 "저장할까요?"를 묻는다
+let leaveGuard = null, lastHash = location.hash, skipHash = false;
+const setLeaveGuard = fn => { leaveGuard = fn; };
+window.addEventListener('hashchange', () => {
+  if (skipHash) { skipHash = false; lastHash = location.hash; return; }
+  if (leaveGuard) {
+    const target = location.hash;
+    skipHash = true;
+    location.replace(lastHash); // 일단 게임 화면으로 되돌려 놓고 물어본다
+    leaveGuard(target);
+    return;
+  }
+  lastHash = location.hash;
+  route();
+});
 
 async function route() {
   if (cleanup) { try { cleanup(); } catch { /* 무시 */ } cleanup = null; }
@@ -39,9 +54,10 @@ async function route() {
     case 'create': return renderCreate();
     case 'records': return renderRecords();
     case 'friends': return renderFriends();
+    case 'saved': return renderSaved();
     case 'room':
       currentRoom = arg.toUpperCase();
-      cleanup = await openRoom(app, currentRoom, { me, config, go, openDrawer, getSocial: () => social, onSocial: fn => socialListeners.add(fn), inviteLink });
+      cleanup = await openRoom(app, currentRoom, { me, config, go, openDrawer, getSocial: () => social, onSocial: fn => socialListeners.add(fn), inviteLink, setLeaveGuard });
       updateBadges();
       return;
     default: return renderHome();
@@ -232,6 +248,7 @@ function renderDrawer() {
     <div class="drawer-sec"><h4>메뉴</h4><nav class="nav-list">
       ${item('#/home', '⌂', '홈', 'home')}
       ${item('#/start', '◆', '퍼즐 시작하기', 'start')}
+      ${item('#/saved', '▶', '하던 퍼즐 이어하기', 'saved')}
       ${item('#/create', '▣', '내 사진으로 만들기', 'create')}
       ${item('#/friends', '☺', '친구', 'friends', social.requests.length)}
       ${item('#/records', '★', '내 기록', 'records')}
@@ -425,6 +442,10 @@ async function renderHome() {
   </div>${wave}</section>
   <main class="page">
     <div id="home-invites"></div>
+    <section class="section" id="home-saved-sec" hidden>
+      <div class="section-head"><div><span class="eyebrow">이어하기</span><h2 style="margin-top:8px">하던 퍼즐</h2><p>저장해 둔 퍼즐을 이어서 맞춰요.</p></div><a class="btn line" href="#/saved">모두 보기</a></div>
+      <div class="saved-list" id="home-saved"></div>
+    </section>
     <section class="section">
       <div class="section-head"><div><span class="eyebrow">컬렉션</span><h2 style="margin-top:8px">오늘의 그림</h2><p>그림을 누르면 바로 조각 수를 고를 수 있어요.</p></div><a class="btn line" href="#/start">모든 그림 보기</a></div>
       <div class="gallery" id="home-gallery"></div>
@@ -468,6 +489,13 @@ async function renderHome() {
   socialListeners.add(drawSocial);
   drawSocial();
   refreshSocial();
+
+  api('/api/saved').then(d => {
+    if (!d.games.length || !$('#home-saved')) return;
+    $('#home-saved').innerHTML = d.games.slice(0, 3).map(savedCard).join('');
+    $('#home-saved-sec').hidden = false;
+    bindSaved($('#home-saved'), () => renderHome());
+  }).catch(() => {});
 
   try {
     const pics = (await api('/api/pictures')).pictures.filter(p => p.sample).slice(0, 8);
@@ -700,6 +728,51 @@ function renderFriends() {
   socialListeners.add(draw);
   draw();
   refreshSocial();
+}
+
+// ---------------- 하던 퍼즐 ----------------
+function savedCard(g) {
+  const pct = Math.floor(g.locked / g.pieces * 100);
+  return `
+    <div class="rec saved">
+      <div class="thumb" style="background-image:url('${esc(g.url)}')"></div>
+      <div>
+        <h3>${esc(g.title)}</h3>
+        <div class="facts">
+          <span>맞춘 조각 <b>${g.locked}/${g.pieces}</b></span>
+          <span>걸린 시간 <b>${fmtTime(g.seconds)}</b></span>
+          ${g.online ? `<span><b>${g.online}명</b> 맞추는 중</span>` : ''}
+        </div>
+        <div class="progress" style="margin:10px 0 6px"><div style="width:${pct}%"></div></div>
+        <p class="muted" style="font-size:17px">${new Date(g.savedAt).toLocaleString('ko-KR', { dateStyle: 'long', timeStyle: 'short' })} 저장
+          ${g.people.length > 1 ? ` · 함께: ${g.people.map(esc).join(', ')}` : ''}</p>
+        <div class="row" style="margin-top:12px">
+          <a class="btn" href="#/room/${esc(g.code)}">▶ 이어서 하기</a>
+          <button class="btn danger" data-unsave="${esc(g.code)}">목록에서 지우기</button>
+        </div>
+      </div>
+    </div>`;
+}
+function bindSaved(el, after) {
+  $$('[data-unsave]', el).forEach(b => b.addEventListener('click', () => {
+    const m = openModal(`<h2>목록에서 지울까요?</h2><p class="muted">지워도 같이 하던 친구의 퍼즐은 그대로예요. 나만 이 목록에서 안 보이게 돼요.</p><div class="spacer"></div>
+      <div class="stack"><button class="btn danger wide" id="us-yes">지우기</button><button class="btn light wide" data-close>그대로 두기</button></div>`);
+    $('#us-yes', m).addEventListener('click', async () => {
+      m.close();
+      try { await api('/api/saved/remove', { code: b.dataset.unsave }); toast('목록에서 지웠어요.'); } catch (err) { toast(err.message); }
+      after();
+    });
+  }));
+}
+async function renderSaved() {
+  shell(`<main class="page"><div class="page-title"><span class="eyebrow">이어하기</span><h2 style="margin-top:10px">하던 퍼즐</h2><p>저장해 둔 퍼즐이에요. 다시 들어가면 맞춘 자리 그대로 이어서 할 수 있어요.</p></div><div class="rec-list" id="saved-list" style="margin-top:26px"><p class="muted">불러오는 중...</p></div></main>`);
+  let games;
+  try { games = (await api('/api/saved')).games; } catch (err) { toast(err.message); return; }
+  const el = $('#saved-list');
+  if (!el) return;
+  el.innerHTML = games.length ? games.map(savedCard).join('')
+    : `<div class="card empty"><img src="/assets/logo.svg" alt=""><h3>하던 퍼즐이 없어요</h3><p class="muted" style="margin:8px 0 22px">퍼즐에서 나갈 때 "저장하고 나가기"를 누르면 여기에 보여요.</p><a class="btn big" href="#/start">퍼즐 시작하기</a></div>`;
+  bindSaved(el, renderSaved);
 }
 
 // ---------------- 내 기록 ----------------

@@ -2,13 +2,13 @@
 import { $, $$, esc, api, toast, avatarUrl, cropRect, clock, fmtTime, loadImage, copyText, openModal } from './util.js';
 import { Board } from './board.js';
 
-export async function openRoom(root, code, { me, config, openDrawer, getSocial, onSocial, inviteLink }) {
+export async function openRoom(root, code, { me, config, go, openDrawer, getSocial, onSocial, inviteLink, setLeaveGuard }) {
   root.innerHTML = `
   <div class="game">
     <aside class="side">
       <div class="side-top">
         <button class="menu-btn" id="g-menu-open" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
-        <a class="btn light home-btn" href="#/home">← 홈</a>
+        <button class="btn light home-btn" id="g-exit">나가기</button>
         <button class="btn light fold-btn" id="g-fold" aria-label="정보판 접기">◀ 접기</button>
       </div>
       <div class="info-block"><div class="info-label">퍼즐</div><div class="info-val" id="g-title">...</div></div>
@@ -26,6 +26,7 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
       <canvas id="board" aria-label="퍼즐판"></canvas>
       <div class="side-mini" id="g-unfold-box">
         <button class="menu-btn" id="g-menu-open2" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
+        <button class="btn light" id="g-exit2">나가기</button>
         <button class="btn light" id="g-unfold" aria-label="정보판 펼치기">▶ 정보판</button>
         <span class="mini-stat" id="g-mini-stat"></span>
       </div>
@@ -42,6 +43,7 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
           <button class="btn" id="m-rot-l" aria-label="왼쪽으로 돌리기"><span class="big-ic">↺</span>왼쪽으로</button>
           <button class="btn" id="m-rot-r" aria-label="오른쪽으로 돌리기"><span class="big-ic">↻</span>오른쪽으로</button>
         </div>
+        <button class="btn light" id="m-move">☝ 누른 곳으로 옮기기</button>
         <button class="btn light" id="m-out">⇱ 밖으로 빼기</button>
         <button class="btn light" id="m-close">✕ 닫기</button>
       </div>
@@ -70,6 +72,38 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
   let savedFold = null;
   try { savedFold = localStorage.getItem('sideFolded'); } catch { /* 무시 */ }
   setFolded(savedFold === null ? innerWidth < 1100 : savedFold === '1');
+  // ---- 나가기: 저장할지 물어본다 ----
+  let asking = false;
+  const askLeave = target => {
+    if (state.snap?.finishedAt || !state.board) { setLeaveGuard(null); location.hash = target; return; }
+    if (asking) return;
+    asking = true;
+    const bg = modal(`
+      <span class="eyebrow">나가기</span>
+      <h2 style="margin-top:10px">퍼즐에서 나갈까요?</h2>
+      <p class="muted" style="margin-bottom:22px">저장하면 <b>왼쪽 위 메뉴 → 하던 퍼즐</b>이나 홈 화면에서 이어서 맞출 수 있어요. 지금까지 맞춘 조각은 그대로 남아요.</p>
+      <div class="stack">
+        <button class="btn big wide" id="lv-save">저장하고 나가기</button>
+        <button class="btn danger wide" id="lv-drop">저장하지 않고 나가기</button>
+        <button class="btn light wide" data-close>계속 맞추기</button>
+      </div>`);
+    const leave = async keep => {
+      $$('button', bg).forEach(b => { b.disabled = true; });
+      try { await api(keep ? '/api/saved/keep' : '/api/saved/remove', { code }); } catch { /* 나가는 건 그대로 */ }
+      if (!keep) toast('하던 퍼즐 목록에서 뺐어요.');
+      else toast('저장했어요. 다음에 이어서 맞춰요!');
+      setLeaveGuard(null);
+      bg.close();
+      location.hash = target;
+    };
+    $('#lv-save', bg).addEventListener('click', () => leave(true));
+    $('#lv-drop', bg).addEventListener('click', () => leave(false));
+    const done = new MutationObserver(() => { if (!bg.isConnected) { asking = false; done.disconnect(); } });
+    done.observe(document.body, { childList: true });
+  };
+  setLeaveGuard(askLeave);
+  $('#g-exit').addEventListener('click', () => askLeave('#/home'));
+  $('#g-exit2').addEventListener('click', () => askLeave('#/home'));
   $('#g-fold').addEventListener('click', () => setFolded(true));
   $('#g-unfold').addEventListener('click', () => setFolded(false));
   const showError = (msg, full) => {
@@ -115,7 +149,7 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
       state.players.scores = scores;
       renderPlayers();
       updateProgress();
-      if (by === me.id) ding();
+      if (by === me.id) { ding(); try { navigator.vibrate?.(35); } catch { /* 진동 없어도 괜찮음 */ } }
     }
   });
   socket.on('players', p => setPlayers(p));
@@ -148,6 +182,13 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
       onDrop: (id, x, y) => socket.emit('drop', { id, x, y }),
       onClickPiece: (id, pt) => showMenu(id, pt),
       onClickEmpty: () => hideMenu(),
+      // '누른 곳으로 옮기기': 잡았다가 바로 그 자리에 놓는다
+      onTapMove: (id, x, y) => {
+        socket.emit('grab', id, (ok, s) => {
+          if (!ok) { state.board.cancelDrag(id, s); toast('다른 친구가 잡고 있는 조각이에요.'); return; }
+          socket.emit('drop', { id, x, y });
+        });
+      },
       onCursor: (x, y) => socket.volatile.emit('cursor', { x, y }),
       onPress: () => { $('#g-help').hidden = true; },
     });
@@ -214,6 +255,12 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
   function hideMenu() { state.menuFor = -1; $('#g-menu').hidden = true; }
   $('#m-rot-l').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('rotate', state.menuFor, -1); });
   $('#m-rot-r').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('rotate', state.menuFor, 1); });
+  $('#m-move').addEventListener('click', () => {
+    if (state.menuFor < 0 || !state.board) return;
+    state.board.setMoveMode(state.menuFor);
+    hideMenu();
+    toast('조각을 놓을 곳을 한 번 눌러 주세요.', 3500);
+  });
   $('#m-out').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('eject', state.menuFor); hideMenu(); });
   $('#m-close').addEventListener('click', hideMenu);
 
@@ -318,6 +365,7 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
   // 정리 (다른 화면으로 갈 때)
   return () => {
     state.closed = true;
+    setLeaveGuard(null);
     for (const m of [...modals]) m.close();
     clearInterval(state.timer);
     socket.disconnect();

@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS invites (
   from_id INTEGER NOT NULL, to_id INTEGER NOT NULL, room_code TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'wait', created BIGINT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS invites_to ON invites(to_id, status);
+CREATE TABLE IF NOT EXISTS saved_games (user_id INTEGER NOT NULL, room_code TEXT NOT NULL, saved_at BIGINT NOT NULL, PRIMARY KEY (user_id, room_code));
 `;
 
 const SQLITE_SCHEMA = `
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS invites (
   status TEXT NOT NULL DEFAULT 'wait', created INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS invites_to ON invites(to_id, status);
+CREATE TABLE IF NOT EXISTS saved_games (user_id INTEGER NOT NULL, room_code TEXT NOT NULL, saved_at INTEGER NOT NULL, PRIMARY KEY (user_id, room_code));
 `;
 
 async function openPostgres() {

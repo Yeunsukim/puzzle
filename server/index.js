@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 import { Server } from 'socket.io';
 import { db, ah, ROOT, UPLOAD_DIR } from './db.js';
 import { authRoutes, requireUser, userFromCookie, googleClientId } from './auth.js';
-import { createRoom, roomInfo, attachSockets, saveAll } from './rooms.js';
+import { createRoom, roomInfo, progressInfo, attachSockets, saveAll } from './rooms.js';
 import { socialRoutes, attachSocial } from './social.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -83,6 +83,31 @@ app.get('/api/rooms/:code', requireUser, ah(async (req, res) => {
   const info = await roomInfo(req.params.code);
   if (!info) return res.status(404).json({ error: '그런 방이 없어요. 방 번호를 다시 확인해 주세요.' });
   res.json({ room: info });
+}));
+
+// ---- 하던 퍼즐 (보관함) ----
+app.get('/api/saved', requireUser, ah(async (req, res) => {
+  const rows = await db.all('SELECT room_code, saved_at FROM saved_games WHERE user_id = ? ORDER BY saved_at DESC LIMIT 30', req.user.id);
+  const games = [];
+  for (const r of rows) {
+    const info = await progressInfo(r.room_code);
+    if (!info || info.finished) { await db.run('DELETE FROM saved_games WHERE user_id = ? AND room_code = ?', req.user.id, r.room_code); continue; }
+    games.push({ ...info, savedAt: r.saved_at });
+  }
+  res.json({ games });
+}));
+
+app.post('/api/saved/keep', requireUser, ah(async (req, res) => {
+  const code = String(req.body?.code || '').toUpperCase();
+  if (!(await roomInfo(code))) return res.status(404).json({ error: '방을 찾을 수 없어요.' });
+  await db.run('INSERT INTO saved_games (user_id, room_code, saved_at) VALUES (?, ?, ?) ON CONFLICT (user_id, room_code) DO UPDATE SET saved_at = excluded.saved_at',
+    req.user.id, code, Date.now());
+  res.json({ ok: true });
+}));
+
+app.post('/api/saved/remove', requireUser, ah(async (req, res) => {
+  await db.run('DELETE FROM saved_games WHERE user_id = ? AND room_code = ?', req.user.id, String(req.body?.code || '').toUpperCase());
+  res.json({ ok: true });
 }));
 
 // ---- 내 기록 ----

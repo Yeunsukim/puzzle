@@ -22,6 +22,9 @@ export class Board {
     this.cursors = new Map(); // 다른 사람 마우스
     this.effects = [];
     this.ptr = null; this.drag = null;
+    this.touches = new Map();  // 화면에 닿아 있는 손가락들
+    this.pinch = null;         // 두 손가락으로 벌려 확대하는 중
+    this.moveMode = -1;        // '놓을 곳 누르기'로 옮길 조각
     this.need = true;
     this.lastMoveSent = 0; this.lastCursorSent = 0;
     this.setPieces(o.pieces);
@@ -147,11 +150,18 @@ export class Board {
   }
 
   fit() {
-    const b = this.bounds();
+    let b = this.bounds();
     const m = 30;
-    const z = Math.min((this.vw - m * 2 - 90) / (b.x1 - b.x0), (this.vh - m * 2) / (b.y1 - b.y0));
+    let z = Math.min((this.vw - m * 2 - 90) / (b.x1 - b.x0), (this.vh - m * 2) / (b.y1 - b.y0));
+    this.minZ = Math.min(Math.max(0.02, z) * 0.7, 0.3);
+    // 화면이 좁아서(휴대폰) 조각이 너무 작게 보이면, 퍼즐 틀을 화면에 꽉 차게 보여 준다
+    const minPiece = this.vw < 760 ? 40 : 0;
+    if (this.S * z < minPiece) {
+      b = { x0: -this.S * 0.2, y0: -this.S * 0.2, x1: this.W + this.S * 0.2, y1: this.H + this.S * 0.2 };
+      z = Math.min((this.vw - 20 - 90) / (b.x1 - b.x0), (this.vh - 140) / (b.y1 - b.y0));
+      z = Math.max(z, minPiece / this.S * 0.8);
+    }
     this.cam.z = Math.max(0.02, Math.min(this.maxZ, z));
-    this.minZ = Math.min(this.cam.z * 0.7, 0.3);
     this.cam.x = (b.x0 + b.x1) / 2 - (this.vw - 90) / 2 / this.cam.z;
     this.cam.y = (b.y0 + b.y1) / 2 - this.vh / 2 / this.cam.z;
     this.need = true;
@@ -197,18 +207,62 @@ export class Board {
     return null;
   }
 
+  // 손가락으로 누를 때는 조각 모양 바깥을 조금 눌러도 가장 가까운 조각을 고른다
+  pieceNear(wx, wy, screenR) {
+    const exact = this.pieceAt(wx, wy);
+    if (exact) return exact;
+    const r = screenR / this.cam.z, half = this.S / 2;
+    let best = null, bd = Infinity;
+    for (let i = this.order.length - 1; i >= 0; i--) {
+      const p = this.pieces[this.order[i]];
+      const d = Math.max(Math.abs(wx - (p.x + half)), Math.abs(wy - (p.y + half))) - half;
+      if (d < r && d < bd) { bd = d; best = p; }
+    }
+    return best;
+  }
+
   // ---- 마우스/손가락 ----
   pointerDown(e) {
-    if (e.button > 0 || this.ptr) return;
-    this.c.setPointerCapture(e.pointerId);
+    if (e.button > 0) return;
+    this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // 두 번째 손가락이 닿으면: 끌던 조각은 그 자리에 놓고 '벌려서 확대' 시작
+    if (this.touches.size >= 2) {
+      if (this.pinch) return;
+      if (this.drag) { const p = this.pieces[this.drag.id]; this.drag = null; this.o.onDrop(p.id, p.x, p.y); }
+      this.ptr = null;
+      this.startPinch();
+      return;
+    }
+    if (this.ptr || this.pinch) return;
+    try { this.c.setPointerCapture(e.pointerId); } catch { /* 잡기 실패해도 계속 */ }
+    const touch = e.pointerType !== 'mouse';
     const w = this.toWorld(e.clientX, e.clientY);
-    const p = this.pieceAt(w.x, w.y);
+    const p = touch ? this.pieceNear(w.x, w.y, 22) : this.pieceAt(w.x, w.y);
     const free = p && (!p.held || p.held === this.me);
-    this.ptr = { id: e.pointerId, sx: e.clientX, sy: e.clientY, cx: e.clientX, cy: e.clientY, piece: free ? p.id : -1, moved: false, cam: { ...this.cam } };
+    this.ptr = { id: e.pointerId, touch, sx: e.clientX, sy: e.clientY, cx: e.clientX, cy: e.clientY, piece: free ? p.id : -1, moved: false, cam: { ...this.cam } };
     this.o.onPress?.();
   }
 
+  startPinch() {
+    const [a, b] = [...this.touches.values()];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    this.pinch = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), z0: this.cam.z, world: this.toWorld(mx, my) };
+  }
+
+  movePinch() {
+    const [a, b] = [...this.touches.values()];
+    const r = this.c.getBoundingClientRect();
+    const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
+    const d = Math.max(10, Math.hypot(a.x - b.x, a.y - b.y));
+    this.cam.z = Math.max(this.minZ, Math.min(this.maxZ, this.pinch.z0 * d / this.pinch.d0));
+    this.cam.x = this.pinch.world.x - mx / this.cam.z;
+    this.cam.y = this.pinch.world.y - my / this.cam.z;
+    this.need = true;
+  }
+
   pointerMove(e) {
+    if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.pinch) { if (this.touches.size >= 2) this.movePinch(); return; }
     const now = performance.now();
     const w = this.toWorld(e.clientX, e.clientY);
     if (now - this.lastCursorSent > 90) { this.lastCursorSent = now; this.o.onCursor?.(w.x, w.y); }
@@ -222,7 +276,9 @@ export class Board {
       if (this.ptr.piece >= 0) {
         const p = this.pieces[this.ptr.piece];
         const w0 = this.toWorld(this.ptr.sx, this.ptr.sy);
-        this.drag = { id: p.id, offX: w0.x - p.x, offY: w0.y - p.y };
+        // 손가락일 때는 조각을 손가락보다 조금 위로 띄워서 손가락에 가려지지 않게
+        const lift = this.ptr.touch ? 56 / this.cam.z : 0;
+        this.drag = { id: p.id, offX: w0.x - p.x, offY: w0.y - p.y + lift };
         p.held = this.me;
         this.toTop(p.id);
         this.c.style.cursor = 'grabbing';
@@ -248,6 +304,8 @@ export class Board {
   }
 
   pointerUp(e, cancelled) {
+    this.touches.delete(e.pointerId);
+    if (this.pinch) { if (this.touches.size < 2) this.pinch = null; return; }
     if (!this.ptr || e.pointerId !== this.ptr.id) return;
     const ptr = this.ptr;
     this.ptr = null;
@@ -257,11 +315,19 @@ export class Board {
       this.drag = null;
       this.o.onDrop(p.id, p.x, p.y);
     } else if (!ptr.moved && !cancelled) {
-      if (ptr.piece >= 0) this.o.onClickPiece(ptr.piece, { x: e.clientX, y: e.clientY });
+      // '놓을 곳 누르기' 중이면 누른 곳으로 조각을 옮긴다
+      if (this.moveMode >= 0) {
+        const w = this.toWorld(e.clientX, e.clientY);
+        const id = this.moveMode;
+        this.moveMode = -1;
+        this.o.onTapMove?.(id, w.x - this.S / 2, w.y - this.S / 2);
+      } else if (ptr.piece >= 0) this.o.onClickPiece(ptr.piece, { x: e.clientX, y: e.clientY });
       else this.o.onClickEmpty?.();
     }
     this.need = true;
   }
+
+  setMoveMode(id) { this.moveMode = id; this.need = true; }
 
   // ---- 매 화면마다 ----
   step() {
@@ -381,10 +447,10 @@ export class Board {
       ctx.scale(1.04, 1.04);
     }
     ctx.drawImage(this.sprites[p.id], -half - pw, -half - pw, S + pw * 2, S + pw * 2);
-    if (other) {
+    if (other || p.id === this.moveMode) {
       ctx.shadowColor = 'transparent';
       ctx.translate(-half, -half);
-      ctx.strokeStyle = other.color;
+      ctx.strokeStyle = other ? other.color : '#49C5B6';
       ctx.lineWidth = Math.max(3 / this.cam.z, S * 0.05);
       ctx.stroke(this.paths[p.id]);
     }

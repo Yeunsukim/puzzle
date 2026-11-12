@@ -352,6 +352,9 @@ button, input, select { font: inherit; color: inherit; }
 .rec h3 { margin-bottom: 6px; }
 .rec .facts { display: flex; flex-wrap: wrap; gap: 6px 26px; font-size: 19px; }
 .rec .facts b { font-family: var(--serif); color: var(--blue-d); font-size: 23px; }
+.saved-list { display: grid; gap: 18px; }
+.rec.saved { align-items: start; }
+.rec.saved .row .btn { min-height: 58px; font-size: 19px; padding: 0 22px; }
 .empty { text-align: center; padding: 56px 20px; }
 .empty img { width: 110px; margin-bottom: 14px; }
 .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 26px 0 30px; }
@@ -447,7 +450,15 @@ button, input, select { font: inherit; color: inherit; }
 .game.folded .side { visibility: hidden; padding: 0; border: 0; }
 .fold-btn { min-height: 64px; padding: 0 16px; font-size: 18px; }
 .side-top .home-btn { padding: 0 14px; font-size: 18px; }
-.side-mini { position: absolute; left: 16px; top: 16px; z-index: 4; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
+.side-mini { position: absolute; left: 16px; top: 16px; z-index: 4; display: none; align-items: center; gap: 10px; flex-wrap: wrap; max-width: calc(100% - 120px); }
+@media (max-width: 560px) {
+  .side-mini { left: 10px; top: 10px; gap: 8px; }
+  .side-mini .btn { min-height: 56px; padding: 0 14px; font-size: 17px; }
+  .side-mini .menu-btn { width: 56px; height: 56px; }
+  .zoom { right: 10px; top: 10px; gap: 8px; }
+  .zbtn { width: 60px; min-height: 60px; font-size: 28px; }
+  .mini { width: 100px; right: 10px; bottom: 10px; }
+}
 .game.folded .side-mini { display: flex; }
 .side-mini .btn { min-height: 64px; font-size: 18px; padding: 0 18px; box-shadow: var(--shadow); }
 .side-mini .menu-btn { width: 64px; height: 64px; box-shadow: var(--shadow); }

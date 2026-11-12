@@ -99,6 +99,20 @@ async function loadRoom(code) {
   return room;
 }
 
+// '하던 퍼즐' 목록에 보여 줄 진행 상황
+export async function progressInfo(code) {
+  const r = await getRoom(code);
+  if (!r) return null;
+  const st = r.state;
+  const end = st.finishedAt || (r.online.size ? Date.now() : (st.pausedAt || Date.now()));
+  return {
+    code: r.code, title: r.picture.title, url: r.picture.url, pieces: r.cols * r.rows,
+    locked: r.lockedCount, finished: !!st.finishedAt, online: r.online.size,
+    seconds: st.startedAt ? Math.max(0, Math.round((end - st.startedAt) / 1000)) : 0,
+    people: Object.values(st.people).map(p => p.nick),
+  };
+}
+
 export async function roomInfo(code) {
   const r = await getRoom(code);
   if (!r) return null;
@@ -203,6 +217,7 @@ function finish(room) {
       await db.run('INSERT INTO records (user_id, room_code, picture_id, title, url, pieces, seconds, placed, friends, finished) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         p.uid, room.code, room.picture.id, room.picture.title, room.picture.url, sum.pieces, sum.seconds, p.placed, JSON.stringify(friends), st.finishedAt);
     }
+    await db.run('DELETE FROM saved_games WHERE room_code = ?', room.code); // 다 맞췄으니 '하던 퍼즐'에서 빼기
     await saveRoom(room);
   })().catch(err => console.error('기록 저장 실패:', err.message));
   return sum;
@@ -283,7 +298,12 @@ export function attachSockets(io) {
       if (!r.state.finishedAt) {
         r.state.people[uid] = { nick: user.nick, avatar: user.avatar, color: o.color };
         if (!r.state.startedAt) r.state.startedAt = Date.now();
+        // 아무도 없어서 멈춰 있던 시간은 걸린 시간에서 뺀다
+        if (r.state.pausedAt) { r.state.startedAt += Date.now() - r.state.pausedAt; r.state.pausedAt = null; }
         r.dirty = true;
+        // 들어오면 '하던 퍼즐'에 자동으로 보관 (나갈 때 '저장 안 함'을 고르면 지운다)
+        db.run('INSERT INTO saved_games (user_id, room_code, saved_at) VALUES (?, ?, ?) ON CONFLICT (user_id, room_code) DO UPDATE SET saved_at = excluded.saved_at',
+          uid, r.code, Date.now()).catch(() => {});
       }
       socket.join(r.code);
       ack({ ok: true, snapshot: snapshot(r, uid) });
@@ -359,6 +379,11 @@ export function attachSockets(io) {
       if (o) {
         o.sockets.delete(socket.id);
         if (o.sockets.size === 0) room.online.delete(uid);
+      }
+      // 마지막 사람이 나가면 시계를 멈춘다
+      if (room.online.size === 0 && !room.state.finishedAt && room.state.startedAt && !room.state.pausedAt) {
+        room.state.pausedAt = Date.now();
+        room.dirty = true;
       }
       io.to(room.code).emit('cursor-off', { uid });
       emitPlayers();
