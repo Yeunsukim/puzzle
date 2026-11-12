@@ -36,7 +36,12 @@ function lanUrls() {
 authRoutes(app);
 socialRoutes(app);
 
-app.get('/api/config', (_req, res) => res.json({ googleClientId, lanUrls: lanUrls(), publicUrl }));
+// 음성 대화 연결을 도와주는 서버 주소 (STUN: 무료 공개 서버. TURN: 직접 연결이 막힐 때 쓰는 중계 서버, 있을 때만)
+const iceServers = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+if (process.env.TURN_URL) {
+  iceServers.push({ urls: process.env.TURN_URL.split(',').map(s => s.trim()), username: process.env.TURN_USER || '', credential: process.env.TURN_PASS || '' });
+}
+app.get('/api/config', (_req, res) => res.json({ googleClientId, lanUrls: lanUrls(), publicUrl, iceServers }));
 
 // ---- 퍼즐 그림 ----
 app.get('/api/pictures', requireUser, ah(async (req, res) => {

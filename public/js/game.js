@@ -1,6 +1,7 @@
 // 게임방 화면: 실시간 연결 + 퍼즐판 + 정보판 + 조각 메뉴 + 완성 축하
 import { $, $$, esc, api, toast, avatarUrl, cropRect, clock, fmtTime, loadImage, copyText, openModal } from './util.js';
 import { Board } from './board.js';
+import { Voice } from './voice.js';
 
 export async function openRoom(root, code, { me, config, go, openDrawer, getSocial, onSocial, inviteLink, setLeaveGuard }) {
   root.innerHTML = `
@@ -20,6 +21,11 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       </div>
       <div class="info-label hide-sm">함께하는 친구 (<span id="g-pn">0</span>/6)</div>
       <ul class="players" id="g-players"></ul>
+      <div class="voice-box">
+        <button class="btn voice-btn" id="v-toggle">🎤 음성 대화 켜기</button>
+        <button class="btn light" id="v-mute" hidden>🔇 내 마이크 잠깐 끄기</button>
+        <p class="voice-note" id="v-note">마이크는 꺼져 있어요.</p>
+      </div>
       <button class="btn teal" id="g-invite">＋ 친구 초대하기</button>
     </aside>
     <main class="stage" id="stage">
@@ -28,6 +34,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         <button class="menu-btn" id="g-menu-open2" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
         <button class="btn light" id="g-exit2">나가기</button>
         <button class="btn light" id="g-unfold" aria-label="정보판 펼치기">▶ 정보판</button>
+        <button class="btn light mic-mini" id="v-toggle2" aria-label="음성 대화 켜기">🎤 켜기</button>
         <span class="mini-stat" id="g-mini-stat"></span>
       </div>
       <div class="zoom">
@@ -153,6 +160,55 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     }
   });
   socket.on('players', p => setPlayers(p));
+
+  // ---- 음성 대화 ----
+  state.voicePeers = [];
+  state.speaking = new Set();
+  const voice = new Voice(socket, config.iceServers, {
+    onChange: () => { renderPlayers(); updateVoiceUI(); },
+    onSpeaking: s => { state.speaking = s; renderPlayers(); },
+    onLost: () => toast('연결이 끊겨서 음성 대화가 꺼졌어요. 다시 켜 주세요.', 4000),
+    onFail: uid => toast(`${playerInfo(uid)?.nick || '친구'}님과는 음성 연결이 잘 안 돼요. 인터넷 환경 때문일 수 있어요.`, 4500),
+  });
+  $('#board').voice = voice; // 시험할 때 확인용
+  socket.on('voice-peers', list => { state.voicePeers = list || []; renderPlayers(); updateVoiceUI(); });
+  const toggleVoice = async () => {
+    if (voice.on) { voice.stop(); toast('음성 대화를 껐어요.'); return; }
+    if (!Voice.supported() || !window.isSecureContext) {
+      return toast('이 주소에서는 음성 대화를 쓸 수 없어요. https 로 시작하는 인터넷 주소에서 써 주세요.', 5000);
+    }
+    $('#v-toggle').disabled = true;
+    try {
+      await voice.start();
+      toast('음성 대화를 켰어요. 이제 말하면 친구들에게 들려요.');
+    } catch (err) {
+      const msg = err?.name === 'NotAllowedError' ? '마이크 사용이 막혀 있어요. 주소창 왼쪽의 자물쇠 모양 → 마이크 → 허용으로 바꿔 주세요.'
+        : err?.name === 'NotFoundError' ? '마이크를 찾을 수 없어요. 마이크(이어폰)가 연결돼 있는지 확인해 주세요.'
+        : '마이크를 켜지 못했어요. 다시 눌러 주세요.';
+      toast(msg, 6000);
+    } finally { $('#v-toggle').disabled = false; }
+  };
+  function updateVoiceUI() {
+    const others = state.voicePeers.filter(p => p.uid !== me.id);
+    const othersCount = new Set(others.map(p => p.uid)).size;
+    $('#v-toggle').textContent = voice.on ? '🎤 음성 대화 끄기' : '🎤 음성 대화 켜기';
+    $('#v-toggle').classList.toggle('on', voice.on);
+    $('#v-mute').hidden = !voice.on;
+    $('#v-mute').textContent = voice.muted ? '🎙 내 마이크 다시 켜기' : '🔇 내 마이크 잠깐 끄기';
+    $('#v-toggle2').textContent = voice.on ? (voice.muted ? '🔇 꺼짐' : '🎤 대화 중') : '🎤 켜기';
+    $('#v-toggle2').classList.toggle('on', voice.on);
+    $('#v-note').textContent = voice.on
+      ? (voice.muted ? '내 마이크를 잠깐 껐어요. 친구 목소리는 계속 들려요.'
+        : othersCount ? `${othersCount}명과 음성 대화 중이에요. 이어폰을 쓰면 더 깨끗하게 들려요.` : '음성 대화를 켰어요. 친구가 켜면 바로 이야기할 수 있어요.')
+      : othersCount ? `지금 ${othersCount}명이 음성 대화 중이에요. 켜면 같이 이야기할 수 있어요.` : '마이크는 꺼져 있어요. 켜면 친구와 목소리로 이야기할 수 있어요.';
+  }
+  $('#v-toggle').addEventListener('click', toggleVoice);
+  $('#v-toggle2').addEventListener('click', toggleVoice);
+  $('#v-mute').addEventListener('click', () => voice.setMuted(!voice.muted));
+  $('#g-players').addEventListener('click', e => {
+    const b = e.target.closest('[data-silence]');
+    if (b) voice.toggleSilence(Number(b.dataset.silence));
+  });
   socket.on('cursor', ({ uid, x, y }) => state.board?.setCursor(uid, x, y));
   socket.on('cursor-off', ({ uid }) => state.board?.removeCursor(uid));
   socket.on('done', summary => { state.snap.finishedAt = summary.finishedAt; updateTime(); showDone(summary); });
@@ -165,7 +221,9 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     $('#g-count').textContent = `${snap.cols * snap.rows}조각`;
     $('#g-mini-img').src = snap.picture.url;
     $('#g-loading-msg').textContent = '조각을 준비하는 중...';
+    state.voicePeers = snap.voice || [];
     setPlayers(snap.players);
+    updateVoiceUI();
     let image;
     try { image = await loadImage(snap.picture.url); } catch { return showError('퍼즐 그림을 불러오지 못했어요.'); }
     await new Promise(r => setTimeout(r, 30)); // 안내 글이 먼저 보이도록
@@ -209,12 +267,19 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     for (const o of online) if (!all.some(a => a.uid === o.uid)) all.push(o);
     all.sort((a, b) => (onIds.has(b.uid) - onIds.has(a.uid)) || ((scores[b.uid] || 0) - (scores[a.uid] || 0)));
     $('#g-pn').textContent = online.length;
-    $('#g-players').innerHTML = all.map(p => `
-      <li class="${onIds.has(p.uid) ? '' : 'off'}" style="border-color:${p.color}">
+    const inVoice = new Set((state.voicePeers || []).map(v => v.uid));
+    const talking = uid => state.speaking?.has(uid === me.id ? 'me' : uid);
+    $('#g-players').innerHTML = all.map(p => {
+      const mine = p.uid === me.id;
+      const silenced = voice.silenced.has(p.uid);
+      return `
+      <li class="${onIds.has(p.uid) ? '' : 'off'} ${talking(p.uid) ? 'speaking' : ''}" style="border-color:${p.color}">
         <img src="${avatarUrl(p.avatar)}" alt="" style="background:${p.color}33">
-        <span class="nm">${esc(p.nick)}${p.uid === me.id ? ' (나)' : ''}</span>
+        <span class="nm">${esc(p.nick)}${mine ? ' (나)' : ''}${inVoice.has(p.uid) ? ' <span class="v-ic" title="음성 대화 중">🎧</span>' : ''}</span>
+        ${!mine && voice.on && inVoice.has(p.uid) ? `<button class="silence-btn" data-silence="${p.uid}" aria-label="${esc(p.nick)}님 소리 ${silenced ? '켜기' : '끄기'}">${silenced ? '🔇' : '🔈'}</button>` : ''}
         <span class="sc">${scores[p.uid] || 0}개</span>
-      </li>`).join('');
+      </li>`;
+    }).join('');
     state.board && (state.board.need = true);
     state.redrawInvite?.();
   }
@@ -366,6 +431,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   return () => {
     state.closed = true;
     setLeaveGuard(null);
+    voice.stop();
     for (const m of [...modals]) m.close();
     clearInterval(state.timer);
     socket.disconnect();

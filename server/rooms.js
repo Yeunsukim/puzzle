@@ -86,6 +86,7 @@ async function loadRoom(code) {
     state,
     online: new Map(),   // uid -> { uid, nick, avatar, color, sockets:Set }
     held: new Map(),     // 조각 id -> 잡고 있는 uid
+    voice: new Map(),    // 음성 대화 중인 연결(socket id) -> uid
     cells: new Int32Array(row.cols * row.rows).fill(-1), // 칸 -> 그 칸에 놓인 조각 id
     slots: makeSlots(row.cols, row.rows, row.cols * row.rows),
     lockedCount: 0,
@@ -241,8 +242,10 @@ function snapshot(room, uid) {
     startedAt: room.state.startedAt, finishedAt: room.state.finishedAt,
     summary: room.state.finishedAt ? summary(room) : null,
     now: Date.now(), me: uid, maxPlayers: MAX_PLAYERS,
+    voice: voiceList(room),
   };
 }
+const voiceList = room => [...room.voice].map(([sid, uid]) => ({ sid, uid }));
 
 // ---- 실시간 연결 ----
 export function attachSockets(io) {
@@ -365,6 +368,27 @@ export function attachSockets(io) {
       afterChange([p], []);
     });
 
+    // ---- 음성 대화: 서버는 연결 신호만 전해 주고, 목소리는 브라우저끼리 바로 주고받는다 ----
+    const leaveVoice = () => {
+      if (room && room.voice.delete(socket.id)) {
+        io.to(room.code).emit('voice-left', { sid: socket.id });
+        io.to(room.code).emit('voice-peers', voiceList(room));
+      }
+    };
+    socket.on('voice-join', ack => {
+      if (!room) return;
+      room.voice.set(socket.id, uid);
+      if (typeof ack === 'function') ack(voiceList(room).filter(p => p.sid !== socket.id));
+      io.to(room.code).emit('voice-peers', voiceList(room));
+    });
+    socket.on('voice-leave', leaveVoice);
+    socket.on('voice-signal', msg => {
+      if (!room || !room.voice.has(socket.id)) return;
+      const to = String(msg?.to || '');
+      if (!room.voice.has(to) || !msg.data || JSON.stringify(msg.data).length > 20000) return;
+      io.to(to).emit('voice-signal', { from: socket.id, uid, data: msg.data });
+    });
+
     socket.on('cursor', data => {
       if (!room) return;
       const x = Number(data?.x), y = Number(data?.y);
@@ -374,6 +398,7 @@ export function attachSockets(io) {
 
     socket.on('disconnect', () => {
       if (!room) return;
+      leaveVoice();
       releaseAll();
       const o = room.online.get(uid);
       if (o) {
