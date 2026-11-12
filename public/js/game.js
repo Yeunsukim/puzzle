@@ -52,6 +52,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         </div>
         <button class="btn light" id="m-move">☝ 누른 곳으로 옮기기</button>
         <button class="btn light" id="m-out">⇱ 밖으로 빼기</button>
+        <button class="btn light" id="m-unsel">○ 선택 해제</button>
         <button class="btn light" id="m-close">✕ 닫기</button>
       </div>
       <div class="loading" id="g-loading"><div><img src="/assets/logo.svg" alt=""><h3 id="g-loading-msg">퍼즐 방에 들어가는 중...</h3></div></div>
@@ -145,7 +146,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
 
   socket.on('grab', ({ id, uid }) => {
     state.board?.remoteGrab(id, uid);
-    if (state.menuFor === id) hideMenu();
+    if (state.menuFor === id || state.board?.selected === id) hideMenu();
   });
   socket.on('move', ({ id, x, y }) => state.board?.remoteMove(id, x, y));
   socket.on('pieces', ({ list, locked, by, scores }) => {
@@ -242,6 +243,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       onClickEmpty: () => hideMenu(),
       // '누른 곳으로 옮기기': 잡았다가 바로 그 자리에 놓는다
       onTapMove: (id, x, y) => {
+        state.board.setSelected(-1);
         socket.emit('grab', id, (ok, s) => {
           if (!ok) { state.board.cancelDrag(id, s); toast('다른 친구가 잡고 있는 조각이에요.'); return; }
           socket.emit('drop', { id, x, y });
@@ -308,26 +310,48 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   function showMenu(id, pt) {
     const menu = $('#g-menu'), stage = $('#stage').getBoundingClientRect();
     state.menuFor = id;
+    state.board?.setSelected(id); // 고른 조각: 흰 테두리 + 1.5배
     menu.hidden = false;
     const mw = menu.offsetWidth, mh = menu.offsetHeight;
-    let x = pt.x - stage.left + 30, y = pt.y - stage.top - mh / 2;
-    if (x + mw > stage.width - 110) x = pt.x - stage.left - mw - 30;
-    x = Math.max(10, Math.min(stage.width - mw - 10, x));
-    y = Math.max(10, Math.min(stage.height - mh - 10, y));
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
+    // 메뉴가 크게 보이는 조각을 가리지 않도록 조각 옆으로 띄운다
+    const b = state.board, p = b?.pieces[id];
+    const c = p ? b.toScreen(p.x + b.S / 2, p.y + b.S / 2) : pt;
+    const gap = 16 + (b ? b.S * b.cam.z * 0.8 : 0);
+    const cx = c.x - stage.left, cy = c.y - stage.top;
+    const W = stage.width - 100, H = stage.height; // 오른쪽 확대 단추 자리는 비워 둔다
+    // 오른쪽 → 왼쪽 → 아래 → 위 순서로, 조각을 가리지 않는 자리를 찾는다
+    const spots = [
+      [cx + gap, cy - mh / 2], [cx - gap - mw, cy - mh / 2],
+      [cx - mw / 2, cy + gap], [cx - mw / 2, cy - gap - mh],
+    ];
+    const fits = ([x, y]) => x >= 8 && y >= 8 && x + mw <= W && y + mh <= H - 8;
+    const clampX = x => Math.max(8, Math.min(W - mw, x)), clampY = y => Math.max(8, Math.min(H - mh - 8, y));
+    let pos = spots.find(fits);
+    if (!pos) {
+      // 딱 맞는 자리가 없으면, 옆쪽은 위아래만 / 아래위쪽은 좌우만 조정해서 가장 덜 가리는 자리
+      pos = [[clampX(spots[0][0]), clampY(spots[0][1])], [clampX(spots[1][0]), clampY(spots[1][1])],
+        [clampX(spots[2][0]), clampY(spots[2][1])], [clampX(spots[3][0]), clampY(spots[3][1])]]
+        .map(([x, y]) => ({ x, y, d: Math.max(0, Math.min(x + mw, cx + gap) - Math.max(x, cx - gap)) * Math.max(0, Math.min(y + mh, cy + gap) - Math.max(y, cy - gap)) }))
+        .sort((a, z) => a.d - z.d).map(o => [o.x, o.y])[0];
+    }
+    menu.style.left = Math.round(pos[0]) + 'px';
+    menu.style.top = Math.round(pos[1]) + 'px';
   }
-  function hideMenu() { state.menuFor = -1; $('#g-menu').hidden = true; }
+  // 메뉴만 닫기 (조각은 계속 골라 둔 채)
+  function closeMenu() { state.menuFor = -1; $('#g-menu').hidden = true; }
+  // 메뉴 닫고 선택도 해제
+  function hideMenu() { closeMenu(); state.board?.setSelected(-1); }
   $('#m-rot-l').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('rotate', state.menuFor, -1); });
   $('#m-rot-r').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('rotate', state.menuFor, 1); });
   $('#m-move').addEventListener('click', () => {
     if (state.menuFor < 0 || !state.board) return;
     state.board.setMoveMode(state.menuFor);
-    hideMenu();
+    closeMenu();
     toast('조각을 놓을 곳을 한 번 눌러 주세요.', 3500);
   });
   $('#m-out').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('eject', state.menuFor); hideMenu(); });
-  $('#m-close').addEventListener('click', hideMenu);
+  $('#m-unsel').addEventListener('click', hideMenu);
+  $('#m-close').addEventListener('click', closeMenu);
 
   // ---- 확대/축소 단추 ----
   $('#z-in').addEventListener('click', () => state.board?.zoomBy(1.3));

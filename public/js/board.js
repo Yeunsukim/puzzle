@@ -25,6 +25,7 @@ export class Board {
     this.touches = new Map();  // 화면에 닿아 있는 손가락들
     this.pinch = null;         // 두 손가락으로 벌려 확대하는 중
     this.moveMode = -1;        // '놓을 곳 누르기'로 옮길 조각
+    this.selected = -1;        // 지금 고른 조각
     this.need = true;
     this.lastMoveSent = 0; this.lastCursorSent = 0;
     this.setPieces(o.pieces);
@@ -195,6 +196,15 @@ export class Board {
 
   pieceAt(wx, wy) {
     const S = this.S, half = S / 2;
+    // 고른 조각은 1.5배로 크게 그려져 있으니 그 크기대로 먼저 확인
+    const sel = this.pieces[this.selected];
+    if (sel && !sel.locked) {
+      const dx = (wx - (sel.x + half)) / 1.5, dy = (wy - (sel.y + half)) / 1.5;
+      const a = -sel.rot * Math.PI / 2;
+      const lx = dx * Math.cos(a) - dy * Math.sin(a) + half;
+      const ly = dx * Math.sin(a) + dy * Math.cos(a) + half;
+      if (Math.abs(dx) <= half + this.padW && Math.abs(dy) <= half + this.padW && this.hitCtx.isPointInPath(this.paths[sel.id], lx, ly)) return sel;
+    }
     for (let i = this.order.length - 1; i >= 0; i--) {
       const p = this.pieces[this.order[i]];
       let dx = wx - (p.x + half), dy = wy - (p.y + half);
@@ -329,6 +339,9 @@ export class Board {
 
   setMoveMode(id) { this.moveMode = id; this.need = true; }
 
+  // 고른 조각: 1.5배 크게 + 흰 테두리로 보여 준다 (-1 이면 선택 해제)
+  setSelected(id) { this.selected = id; if (id >= 0) this.toTop(id); this.need = true; }
+
   // ---- 매 화면마다 ----
   step() {
     let anim = false;
@@ -390,7 +403,9 @@ export class Board {
     const visible = p => p.rx < vx1 && p.rx + S > vx0 && p.ry < vy1 && p.ry + S > vy0;
 
     for (const p of this.pieces) if (p.locked && visible(p)) this.drawPiece(p);
-    for (const id of this.order) { const p = this.pieces[id]; if (visible(p)) this.drawPiece(p); }
+    for (const id of this.order) { const p = this.pieces[id]; if (id !== this.selected && visible(p)) this.drawPiece(p); }
+    const sel = this.pieces[this.selected];
+    if (sel && !sel.locked) this.drawPiece(sel); // 고른 조각은 맨 위에
 
     // 맞췄을 때 반짝
     const now = performance.now();
@@ -437,17 +452,34 @@ export class Board {
     const half = S / 2, pw = this.padW;
     const dragging = this.drag && this.drag.id === p.id;
     const other = !p.locked && p.held && p.held !== this.me ? this.o.playerInfo(p.held) : null;
+    const picked = p.id === this.selected && !p.locked && !dragging;
     ctx.save();
     ctx.translate(p.rx + half, p.ry + half);
     if (p.ang % 360) ctx.rotate(p.ang * Math.PI / 180);
-    if (dragging || other) {
+    if (picked) {
+      ctx.scale(1.5, 1.5);
+      ctx.shadowColor = 'rgba(0,0,0,.45)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 6;
+    } else if (dragging || other) {
       ctx.shadowColor = 'rgba(74,55,64,.35)';
       ctx.shadowBlur = 18;
       ctx.shadowOffsetY = 8;
       ctx.scale(1.04, 1.04);
     }
     ctx.drawImage(this.sprites[p.id], -half - pw, -half - pw, S + pw * 2, S + pw * 2);
-    if (other || p.id === this.moveMode) {
+    if (picked) {
+      // 흰 실선 테두리 (밝은 바탕에서도 보이게 바깥에 얇은 어두운 선을 한 번 더)
+      ctx.shadowColor = 'transparent';
+      ctx.translate(-half, -half);
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(20,32,43,.55)';
+      ctx.lineWidth = Math.max(6 / this.cam.z, S * 0.07) / 1.5;
+      ctx.stroke(this.paths[p.id]);
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = Math.max(3.5 / this.cam.z, S * 0.045) / 1.5;
+      ctx.stroke(this.paths[p.id]);
+    } else if (other || p.id === this.moveMode) {
       ctx.shadowColor = 'transparent';
       ctx.translate(-half, -half);
       ctx.strokeStyle = other ? other.color : '#49C5B6';
