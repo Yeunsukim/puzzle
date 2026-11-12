@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1600 1200" width="1600" height="1200">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8FD3FF"/><stop offset=".6" stop-color="#CFEFFF"/><stop offset="1" stop-color="#FFF1D9"/>
+    </linearGradient>
+    <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9BE38C"/><stop offset="1" stop-color="#5CC46A"/></linearGradient>
+    <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7AD27B"/><stop offset="1" stop-color="#3FA65A"/></linearGradient>
+    <g id="cloud"><ellipse cx="0" cy="0" rx="90" ry="44" fill="#fff"/><circle cx="-50" cy="-10" r="46" fill="#fff"/><circle cx="30" cy="-34" r="56" fill="#fff"/><circle cx="80" cy="-6" r="40" fill="#fff"/></g>
+    <g id="flowerA"><g fill="#FF8FB1"><circle cx="0" cy="-22" r="18"/><circle cx="21" cy="-7" r="18"/><circle cx="13" cy="18" r="18"/><circle cx="-13" cy="18" r="18"/><circle cx="-21" cy="-7" r="18"/></g><circle r="13" fill="#FFE066"/></g>
+    <g id="flowerB"><g fill="#FFFFFF"><circle cx="0" cy="-20" r="15"/><circle cx="19" cy="-6" r="15"/><circle cx="12" cy="16" r="15"/><circle cx="-12" cy="16" r="15"/><circle cx="-19" cy="-6" r="15"/></g><circle r="11" fill="#FFB938"/></g>
+    <g id="flowerC"><g fill="#B79BFF"><ellipse cx="0" cy="-18" rx="11" ry="20"/><ellipse cx="0" cy="18" rx="11" ry="20"/><ellipse cx="-18" cy="0" rx="20" ry="11"/><ellipse cx="18" cy="0" rx="20" ry="11"/></g><circle r="10" fill="#FFF4A8"/></g>
+    <g id="stem"><path d="M0 0 v90" stroke="#3E9C4E" stroke-width="8" stroke-linecap="round"/><ellipse cx="18" cy="50" rx="18" ry="8" fill="#55B862" transform="rotate(-30 18 50)"/></g>
+    <g id="bfly"><ellipse cx="-16" cy="-8" rx="18" ry="14" fill="#FFB0D0"/><ellipse cx="16" cy="-8" rx="18" ry="14" fill="#FFB0D0"/><ellipse cx="-12" cy="12" rx="12" ry="10" fill="#FFD36B"/><ellipse cx="12" cy="12" rx="12" ry="10" fill="#FFD36B"/><rect x="-4" y="-16" width="8" height="34" rx="4" fill="#5A4250"/></g>
+  </defs>
+  <rect width="1600" height="1200" fill="url(#sky)"/>
+  <!-- 해 -->
+  <g transform="translate(1340 210)">
+    <g stroke="#FFC93C" stroke-width="16" stroke-linecap="round">
+      <path d="M0 -170 v-50"/><path d="M0 170 v50"/><path d="M-170 0 h-50"/><path d="M170 0 h50"/>
+      <path d="M120 -120 l35 -35"/><path d="M-120 -120 l-35 -35"/><path d="M120 120 l35 35"/><path d="M-120 120 l-35 35"/>
+    </g>
+    <circle r="130" fill="#FFD84D"/><circle r="105" fill="#FFE47A"/>
+    <circle cx="-38" cy="-12" r="10" fill="#7A5230"/><circle cx="38" cy="-12" r="10" fill="#7A5230"/>
+    <path d="M-30 30 q30 28 60 0" stroke="#7A5230" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <ellipse cx="-62" cy="22" rx="16" ry="9" fill="#FF9C7A" opacity=".6"/><ellipse cx="62" cy="22" rx="16" ry="9" fill="#FF9C7A" opacity=".6"/>
+  </g>
+  <use xlink:href="#cloud" transform="translate(260 180)"/>
+  <use xlink:href="#cloud" transform="translate(760 120) scale(.8)"/>
+  <use xlink:href="#cloud" transform="translate(1000 330) scale(.6)"/>
+  <!-- 무지개 -->
+  <g fill="none" stroke-width="28" opacity=".7">
+    <path d="M120 760 A520 520 0 0 1 1160 760" stroke="#FF8FA3"/>
+    <path d="M148 760 A492 492 0 0 1 1132 760" stroke="#FFC46B"/>
+    <path d="M176 760 A464 464 0 0 1 1104 760" stroke="#FFF07A"/>
+    <path d="M204 760 A436 436 0 0 1 1076 760" stroke="#8FE39A"/>
+    <path d="M232 760 A408 408 0 0 1 1048 760" stroke="#8CCBFF"/>
+    <path d="M260 760 A380 380 0 0 1 1020 760" stroke="#C3A6FF"/>
+  </g>
+  <!-- 언덕 -->
+  <path d="M0 760 C260 600 520 640 760 730 C1000 820 1260 640 1600 700 V1200 H0 Z" fill="url(#hill1)"/>
+  <path d="M0 900 C300 800 600 860 900 900 C1200 940 1400 840 1600 860 V1200 H0 Z" fill="url(#hill2)"/>
+  <!-- 나무 -->
+  <g transform="translate(1340 640)">
+    <rect x="-24" y="40" width="48" height="140" rx="16" fill="#B07A4F"/>
+    <circle cx="0" cy="0" r="110" fill="#5FC46D"/><circle cx="-70" cy="40" r="70" fill="#6CD17A"/><circle cx="70" cy="40" r="70" fill="#4DB560"/>
+    <circle cx="-30" cy="-30" r="14" fill="#FF6F7F"/><circle cx="40" cy="10" r="14" fill="#FF6F7F"/><circle cx="-60" cy="50" r="14" fill="#FF6F7F"/><circle cx="60" cy="70" r="14" fill="#FF6F7F"/>
+  </g>
+  <!-- 토끼 -->
+  <g transform="translate(720 830)">
+    <ellipse cx="0" cy="250" rx="220" ry="34" fill="#2F8A47" opacity=".35"/>
+    <ellipse cx="-80" cy="-330" rx="54" ry="150" fill="#fff" stroke="#E9C9CF" stroke-width="8" transform="rotate(-12 -80 -330)"/>
+    <ellipse cx="-80" cy="-320" rx="26" ry="110" fill="#FFB6C3" transform="rotate(-12 -80 -320)"/>
+    <ellipse cx="80" cy="-330" rx="54" ry="150" fill="#fff" stroke="#E9C9CF" stroke-width="8" transform="rotate(14 80 -330)"/>
+    <ellipse cx="80" cy="-320" rx="26" ry="110" fill="#FFB6C3" transform="rotate(14 80 -320)"/>
+    <ellipse cx="0" cy="120" rx="170" ry="150" fill="#fff" stroke="#E9C9CF" stroke-width="8"/>
+    <ellipse cx="0" cy="150" rx="100" ry="90" fill="#FFF4F6"/>
+    <circle cx="0" cy="-90" r="170" fill="#fff" stroke="#E9C9CF" stroke-width="8"/>
+    <ellipse cx="-62" cy="-100" rx="22" ry="28" fill="#4A3740"/><ellipse cx="62" cy="-100" rx="22" ry="28" fill="#4A3740"/>
+    <circle cx="-54" cy="-112" r="9" fill="#fff"/><circle cx="70" cy="-112" r="9" fill="#fff"/>
+    <ellipse cx="-110" cy="-40" rx="34" ry="18" fill="#FF9FB0" opacity=".7"/><ellipse cx="110" cy="-40" rx="34" ry="18" fill="#FF9FB0" opacity=".7"/>
+    <path d="M-16 -54 h32 l-16 16 z" fill="#FF7A93"/>
+    <path d="M0 -38 q-16 26 -38 12 M0 -38 q16 26 38 12" stroke="#4A3740" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <!-- 리본 -->
+    <g transform="translate(90 -230) rotate(14)">
+      <path d="M0 0 L-60 -36 L-60 36 Z" fill="#FF6F91"/><path d="M0 0 L60 -36 L60 36 Z" fill="#FF6F91"/><circle r="18" fill="#FF4F7B"/>
+    </g>
+    <!-- 당근 -->
+    <g transform="translate(150 120) rotate(30)">
+      <path d="M0 -70 L28 80 Q0 100 -28 80 Z" fill="#FF9A3C"/>
+      <path d="M-14 0 h18 M-10 30 h16" stroke="#E07A1F" stroke-width="6" stroke-linecap="round"/>
+      <path d="M0 -70 q-30 -40 -14 -70 M0 -70 q6 -46 30 -58 M0 -70 q30 -20 44 -30" stroke="#3FA65A" stroke-width="12" fill="none" stroke-linecap="round"/>
+    </g>
+    <ellipse cx="-120" cy="230" rx="60" ry="30" fill="#fff" stroke="#E9C9CF" stroke-width="6"/>
+    <ellipse cx="120" cy="230" rx="60" ry="30" fill="#fff" stroke="#E9C9CF" stroke-width="6"/>
+  </g>
+  <!-- 꽃밭 -->
+  <g>
+    <use xlink:href="#stem" transform="translate(110 980)"/><use xlink:href="#flowerA" transform="translate(110 980)"/>
+    <use xlink:href="#stem" transform="translate(230 1040)"/><use xlink:href="#flowerB" transform="translate(230 1040)"/>
+    <use xlink:href="#stem" transform="translate(340 960)"/><use xlink:href="#flowerC" transform="translate(340 960)"/>
+    <use xlink:href="#stem" transform="translate(440 1080)"/><use xlink:href="#flowerA" transform="translate(440 1080) scale(1.2)"/>
+    <use xlink:href="#stem" transform="translate(1040 1060)"/><use xlink:href="#flowerB" transform="translate(1040 1060) scale(1.2)"/>
+    <use xlink:href="#stem" transform="translate(1150 970)"/><use xlink:href="#flowerA" transform="translate(1150 970)"/>
+    <use xlink:href="#stem" transform="translate(1260 1070)"/><use xlink:href="#flowerC" transform="translate(1260 1070) scale(1.2)"/>
+    <use xlink:href="#stem" transform="translate(1380 990)"/><use xlink:href="#flowerB" transform="translate(1380 990)"/>
+    <use xlink:href="#stem" transform="translate(1500 1080)"/><use xlink:href="#flowerA" transform="translate(1500 1080) scale(1.1)"/>
+    <use xlink:href="#flowerC" transform="translate(60 1140) scale(.8)"/>
+    <use xlink:href="#flowerA" transform="translate(600 1150) scale(.8)"/>
+    <use xlink:href="#flowerB" transform="translate(880 1150) scale(.8)"/>
+    <use xlink:href="#flowerC" transform="translate(1560 1150) scale(.8)"/>
+    <use xlink:href="#flowerB" transform="translate(180 820) scale(.6)"/>
+    <use xlink:href="#flowerA" transform="translate(500 760) scale(.6)"/>
+    <use xlink:href="#flowerC" transform="translate(1000 800) scale(.6)"/>
+  </g>
+  <use xlink:href="#bfly" transform="translate(320 560) rotate(-15) scale(1.6)"/>
+  <use xlink:href="#bfly" transform="translate(1120 520) rotate(18) scale(1.3)"/>
+  <use xlink:href="#bfly" transform="translate(560 420) rotate(8)"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <circle cx="60" cy="60" r="58" fill="#F3E6DA"/>
+  <circle cx="30" cy="36" r="15" fill="#B9835A" stroke="#93613C" stroke-width="3"/>
+  <circle cx="90" cy="36" r="15" fill="#B9835A" stroke="#93613C" stroke-width="3"/>
+  <circle cx="30" cy="36" r="7" fill="#E9B98F"/><circle cx="90" cy="36" r="7" fill="#E9B98F"/>
+  <ellipse cx="60" cy="68" rx="38" ry="35" fill="#B9835A" stroke="#93613C" stroke-width="3"/>
+  <ellipse cx="60" cy="82" rx="17" ry="13" fill="#F1D3B4"/>
+  <circle cx="46" cy="64" r="5" fill="#3B2A22"/><circle cx="74" cy="64" r="5" fill="#3B2A22"/>
+  <circle cx="48" cy="62" r="1.8" fill="#fff"/><circle cx="76" cy="62" r="1.8" fill="#fff"/>
+  <ellipse cx="35" cy="78" rx="6" ry="4" fill="#FF8FA0" opacity=".6"/><ellipse cx="85" cy="78" rx="6" ry="4" fill="#FF8FA0" opacity=".6"/>
+  <ellipse cx="60" cy="77" rx="6" ry="4.5" fill="#3B2A22"/>
+  <path d="M60 81 v4 M60 85 q-5 4 -8 0 M60 85 q5 4 8 0" stroke="#3B2A22" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+</svg>

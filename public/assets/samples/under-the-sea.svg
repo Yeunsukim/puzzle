@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1600 1200" width="1600" height="1200">
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FE0F0"/><stop offset=".55" stop-color="#3FB4E0"/><stop offset="1" stop-color="#2A7EC4"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE3A8"/><stop offset="1" stop-color="#F5C77A"/></linearGradient>
+    <radialGradient id="light" cx=".5" cy="0" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <g id="bubble"><circle r="22" fill="#fff" fill-opacity=".25" stroke="#fff" stroke-width="4" stroke-opacity=".8"/><circle cx="-8" cy="-8" r="5" fill="#fff" opacity=".9"/></g>
+    <g id="fish">
+      <path d="M70 0 L120 -40 L112 0 L120 40 Z" fill="currentColor" opacity=".85"/>
+      <ellipse cx="0" cy="0" rx="90" ry="62" fill="currentColor"/>
+      <path d="M-20 -60 q30 -40 60 -4" fill="currentColor" opacity=".8"/>
+      <path d="M10 -58 v116 M40 -48 v96" stroke="#fff" stroke-width="12" opacity=".55"/>
+      <circle cx="-48" cy="-12" r="16" fill="#fff"/><circle cx="-52" cy="-12" r="9" fill="#2B2340"/><circle cx="-55" cy="-16" r="3" fill="#fff"/>
+      <ellipse cx="-50" cy="18" rx="12" ry="7" fill="#FF8FA0" opacity=".7"/>
+      <path d="M-80 10 q10 10 20 2" stroke="#2B2340" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </g>
+    <g id="weed"><path d="M0 0 C-30 -60 30 -110 0 -170 C-30 -230 30 -280 0 -340" stroke="currentColor" stroke-width="30" fill="none" stroke-linecap="round"/></g>
+    <g id="shell"><path d="M-50 0 Q0 -90 50 0 Z" fill="#FFB3C7" stroke="#F07A9A" stroke-width="5"/><path d="M0 -60 V0 M-24 -40 L-14 0 M24 -40 L14 0" stroke="#F07A9A" stroke-width="5"/></g>
+    <g id="star"><path d="M0 -60 L16 -18 L60 -18 L24 8 L38 52 L0 26 L-38 52 L-24 8 L-60 -18 L-16 -18 Z" fill="#FF9E5E" stroke="#E5763A" stroke-width="5" stroke-linejoin="round"/><circle cx="-12" cy="-6" r="5" fill="#4A3740"/><circle cx="12" cy="-6" r="5" fill="#4A3740"/><path d="M-8 10 q8 8 16 0" stroke="#4A3740" stroke-width="4" fill="none" stroke-linecap="round"/></g>
+  </defs>
+  <rect width="1600" height="1200" fill="url(#sea)"/>
+  <rect width="1600" height="700" fill="url(#light)"/>
+  <g fill="#fff" opacity=".12">
+    <path d="M200 0 L320 0 L160 900 L60 900 Z"/><path d="M640 0 L720 0 L620 800 L540 800 Z"/><path d="M1100 0 L1220 0 L1300 900 L1180 900 Z"/>
+  </g>
+  <!-- 모래 -->
+  <path d="M0 1000 C300 940 520 1010 800 980 C1080 950 1300 1010 1600 960 V1200 H0 Z" fill="url(#sand)"/>
+  <g fill="#E9B567" opacity=".6"><circle cx="160" cy="1110" r="8"/><circle cx="420" cy="1060" r="6"/><circle cx="700" cy="1130" r="9"/><circle cx="980" cy="1080" r="7"/><circle cx="1280" cy="1140" r="8"/><circle cx="1480" cy="1050" r="6"/></g>
+  <!-- 해초 -->
+  <use xlink:href="#weed" transform="translate(90 1060)" color="#3CC48A"/>
+  <use xlink:href="#weed" transform="translate(160 1080) scale(.8)" color="#2EA873"/>
+  <use xlink:href="#weed" transform="translate(1460 1040) scale(1.1)" color="#3CC48A"/>
+  <use xlink:href="#weed" transform="translate(1530 1060) scale(.75)" color="#58D69B"/>
+  <use xlink:href="#weed" transform="translate(980 1000) scale(.6)" color="#2EA873"/>
+  <!-- 산호 -->
+  <g transform="translate(1180 1010)" stroke="#FF7FA8" stroke-width="30" stroke-linecap="round" fill="none">
+    <path d="M0 0 V-160 M0 -90 L-60 -150 M0 -120 L60 -200 M-60 -150 V-210 M60 -200 L90 -240"/>
+  </g>
+  <g transform="translate(380 1010)" stroke="#B48CFF" stroke-width="26" stroke-linecap="round" fill="none">
+    <path d="M0 0 V-130 M0 -70 L-50 -130 M0 -100 L50 -170"/>
+  </g>
+  <use xlink:href="#shell" transform="translate(560 1110)"/>
+  <use xlink:href="#shell" transform="translate(1360 1130) scale(.8)"/>
+  <use xlink:href="#star" transform="translate(860 1100) rotate(-12)"/>
+  <!-- 문어 -->
+  <g transform="translate(800 640)">
+    <g stroke="#FF8FB8" stroke-width="44" stroke-linecap="round" fill="none">
+      <path d="M-120 60 C-200 160 -150 260 -230 300"/><path d="M-60 90 C-80 200 -40 260 -90 330"/>
+      <path d="M60 90 C80 200 40 260 90 330"/><path d="M120 60 C200 160 150 260 230 300"/>
+    </g>
+    <g fill="#FFC6DA"><circle cx="-210" cy="270" r="10"/><circle cx="-84" cy="290" r="10"/><circle cx="84" cy="290" r="10"/><circle cx="210" cy="270" r="10"/></g>
+    <ellipse cx="0" cy="-20" rx="200" ry="180" fill="#FF9EC3" stroke="#F07AA6" stroke-width="8"/>
+    <ellipse cx="-70" cy="-110" rx="40" ry="24" fill="#fff" opacity=".45"/>
+    <ellipse cx="-66" cy="10" rx="28" ry="34" fill="#3A2340"/><ellipse cx="66" cy="10" rx="28" ry="34" fill="#3A2340"/>
+    <circle cx="-56" cy="-4" r="11" fill="#fff"/><circle cx="76" cy="-4" r="11" fill="#fff"/>
+    <ellipse cx="-120" cy="70" rx="34" ry="18" fill="#FF6F9A" opacity=".6"/><ellipse cx="120" cy="70" rx="34" ry="18" fill="#FF6F9A" opacity=".6"/>
+    <path d="M-30 80 q30 30 60 0" stroke="#3A2340" stroke-width="9" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- 물고기 -->
+  <use xlink:href="#fish" transform="translate(300 320)" color="#FFC93C"/>
+  <use xlink:href="#fish" transform="translate(1290 260) scale(-1 1) scale(.9)" color="#FF7F7F"/>
+  <use xlink:href="#fish" transform="translate(1320 640) scale(.7)" color="#8E7BFF"/>
+  <use xlink:href="#fish" transform="translate(280 760) scale(-.75 .75)" color="#4FE0B5"/>
+  <use xlink:href="#fish" transform="translate(620 180) scale(.55)" color="#FF9E5E"/>
+  <!-- 거품 -->
+  <use xlink:href="#bubble" transform="translate(470 240)"/><use xlink:href="#bubble" transform="translate(510 170) scale(.7)"/>
+  <use xlink:href="#bubble" transform="translate(1100 400) scale(1.3)"/><use xlink:href="#bubble" transform="translate(1140 320) scale(.8)"/>
+  <use xlink:href="#bubble" transform="translate(940 160)"/><use xlink:href="#bubble" transform="translate(150 520) scale(.9)"/>
+  <use xlink:href="#bubble" transform="translate(1500 460) scale(1.1)"/><use xlink:href="#bubble" transform="translate(1000 820) scale(.8)"/>
+</svg>

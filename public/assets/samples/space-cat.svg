@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1600 1200" width="1600" height="1200">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2B2660"/><stop offset=".5" stop-color="#5A3E8E"/><stop offset="1" stop-color="#C46FA8"/></linearGradient>
+    <radialGradient id="planet" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#FFD0E6"/><stop offset="1" stop-color="#F087B8"/></radialGradient>
+    <radialGradient id="moon" cx=".4" cy=".4" r=".7"><stop offset="0" stop-color="#FFFBE0"/><stop offset="1" stop-color="#FFE38A"/></radialGradient>
+    <g id="st"><path d="M0 -24 L6 -6 L24 0 L6 6 L0 24 L-6 6 L-24 0 L-6 -6 Z" fill="#FFF3A8"/></g>
+    <g id="dot"><circle r="4" fill="#fff"/></g>
+  </defs>
+  <rect width="1600" height="1200" fill="url(#night)"/>
+  <!-- 은하수 -->
+  <path d="M-100 900 C300 700 700 760 1000 520 C1250 320 1450 300 1700 160" stroke="#fff" stroke-opacity=".08" stroke-width="180" fill="none" stroke-linecap="round"/>
+  <!-- 별들 -->
+  <g>
+    <use xlink:href="#st" transform="translate(140 120)"/><use xlink:href="#st" transform="translate(520 90) scale(.7)"/>
+    <use xlink:href="#st" transform="translate(900 200) scale(1.2)"/><use xlink:href="#st" transform="translate(1480 520) scale(.8)"/>
+    <use xlink:href="#st" transform="translate(260 520) scale(.9)"/><use xlink:href="#st" transform="translate(700 1080) scale(.8)"/>
+    <use xlink:href="#st" transform="translate(1180 1080)"/><use xlink:href="#st" transform="translate(80 900) scale(.7)"/>
+    <use xlink:href="#st" transform="translate(1100 120) scale(.6)"/><use xlink:href="#st" transform="translate(1520 1000) scale(.9)"/>
+  </g>
+  <g opacity=".85">
+    <use xlink:href="#dot" transform="translate(60 300)"/><use xlink:href="#dot" transform="translate(330 260)"/><use xlink:href="#dot" transform="translate(640 330)"/>
+    <use xlink:href="#dot" transform="translate(760 60)"/><use xlink:href="#dot" transform="translate(1000 380)"/><use xlink:href="#dot" transform="translate(1300 80)"/>
+    <use xlink:href="#dot" transform="translate(1560 300)"/><use xlink:href="#dot" transform="translate(420 760)"/><use xlink:href="#dot" transform="translate(180 1100)"/>
+    <use xlink:href="#dot" transform="translate(960 1150)"/><use xlink:href="#dot" transform="translate(1400 760)"/><use xlink:href="#dot" transform="translate(560 620)"/>
+    <use xlink:href="#dot" transform="translate(1240 880)"/><use xlink:href="#dot" transform="translate(40 640)"/><use xlink:href="#dot" transform="translate(860 920)"/>
+  </g>
+  <!-- 달 -->
+  <g transform="translate(1340 240)">
+    <circle r="150" fill="url(#moon)"/>
+    <circle cx="-50" cy="-40" r="22" fill="#F5D46A" opacity=".6"/><circle cx="50" cy="40" r="30" fill="#F5D46A" opacity=".6"/><circle cx="-30" cy="70" r="14" fill="#F5D46A" opacity=".6"/>
+    <path d="M-50 10 q12 14 24 0 M26 10 q12 14 24 0" stroke="#8A6A3A" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M-10 50 q10 10 20 0" stroke="#8A6A3A" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- 행성 -->
+  <g transform="translate(260 300)">
+    <ellipse rx="210" ry="50" fill="none" stroke="#9FE3FF" stroke-width="22" transform="rotate(-18)"/>
+    <circle r="120" fill="url(#planet)"/>
+    <path d="M-110 -30 q110 30 220 0" stroke="#fff" stroke-opacity=".35" stroke-width="16" fill="none"/>
+    <path d="M-200 10 A210 50 0 0 0 200 -10" fill="none" stroke="#9FE3FF" stroke-width="22" transform="rotate(-18)"/>
+  </g>
+  <g transform="translate(1440 980)"><circle r="70" fill="#7FE0C0"/><circle cx="-20" cy="-16" r="14" fill="#5CC8A6"/><circle cx="24" cy="20" r="10" fill="#5CC8A6"/></g>
+  <!-- 로켓 + 고양이 -->
+  <g transform="translate(780 640) rotate(-20)">
+    <!-- 불꽃 -->
+    <path d="M-60 300 Q0 470 60 300 Z" fill="#FFB23E"/><path d="M-34 300 Q0 410 34 300 Z" fill="#FFE266"/>
+    <!-- 날개 -->
+    <path d="M-120 140 L-210 300 L-110 280 Z" fill="#FF6F91" stroke="#E04C74" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M120 140 L210 300 L110 280 Z" fill="#FF6F91" stroke="#E04C74" stroke-width="8" stroke-linejoin="round"/>
+    <!-- 몸통 -->
+    <path d="M0 -330 C120 -220 140 60 120 300 L-120 300 C-140 60 -120 -220 0 -330 Z" fill="#F4F1FF" stroke="#C9C0EE" stroke-width="8"/>
+    <path d="M0 -330 C50 -290 78 -240 92 -190 L-92 -190 C-78 -240 -50 -290 0 -330 Z" fill="#FF6F91"/>
+    <rect x="-122" y="220" width="244" height="40" fill="#79C6FF"/>
+    <!-- 창문 속 고양이 -->
+    <circle cx="0" cy="-40" r="100" fill="#BFE6FF" stroke="#79C6FF" stroke-width="16"/>
+    <g transform="translate(0 -30)">
+      <path d="M-70 -20 L-60 -90 L-20 -56 Z" fill="#B8B0C8" stroke="#8E86A6" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M70 -20 L60 -90 L20 -56 Z" fill="#B8B0C8" stroke="#8E86A6" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M-58 -36 L-54 -74 L-32 -56 Z" fill="#FFC0D0"/><path d="M58 -36 L54 -74 L32 -56 Z" fill="#FFC0D0"/>
+      <ellipse cx="0" cy="0" rx="76" ry="64" fill="#B8B0C8" stroke="#8E86A6" stroke-width="5"/>
+      <path d="M-14 -60 v20 M0 -64 v22 M14 -60 v20" stroke="#8E86A6" stroke-width="6" stroke-linecap="round"/>
+      <ellipse cx="-28" cy="-4" rx="10" ry="13" fill="#2B2340"/><ellipse cx="28" cy="-4" rx="10" ry="13" fill="#2B2340"/>
+      <circle cx="-24" cy="-9" r="4" fill="#fff"/><circle cx="32" cy="-9" r="4" fill="#fff"/>
+      <ellipse cx="-48" cy="20" rx="12" ry="7" fill="#FF8FA0" opacity=".7"/><ellipse cx="48" cy="20" rx="12" ry="7" fill="#FF8FA0" opacity=".7"/>
+      <path d="M-7 14 h14 l-7 7 z" fill="#FF7A93"/>
+      <path d="M0 21 q-8 10 -16 4 M0 21 q8 10 16 4" stroke="#2B2340" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </g>
+    <circle cx="0" cy="110" r="22" fill="#FFE266" stroke="#F2B620" stroke-width="6"/>
+  </g>
+  <!-- 꼬리 별 -->
+  <g transform="translate(420 980) rotate(-30)">
+    <path d="M0 0 L-260 30" stroke="#FFF3A8" stroke-width="12" stroke-linecap="round" opacity=".6"/>
+    <use xlink:href="#st" transform="scale(1.6)"/>
+  </g>
+</svg>

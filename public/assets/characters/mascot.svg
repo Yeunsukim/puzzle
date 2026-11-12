@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB3B7"/>
+      <stop offset="1" stop-color="#FF8A92"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="110" cy="206" rx="62" ry="9" fill="#F06B7A" opacity=".18"/>
+  <!-- 팔 -->
+  <path d="M38 120 q-22 -6 -26 -26" stroke="#F06B7A" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <circle cx="12" cy="92" r="10" fill="#FFB3B7" stroke="#F06B7A" stroke-width="4"/>
+  <path d="M182 120 q22 4 26 -22" stroke="#F06B7A" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <circle cx="208" cy="96" r="10" fill="#FFB3B7" stroke="#F06B7A" stroke-width="4"/>
+  <!-- 다리 -->
+  <path d="M86 186 v14" stroke="#F06B7A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M134 186 v14" stroke="#F06B7A" stroke-width="10" stroke-linecap="round"/>
+  <!-- 퍼즐 조각 몸 -->
+  <path d="M40 60 h44 c-8 -26 10 -40 26 -40 s34 14 26 40 h44 v44 c26 -8 40 10 40 26 s-14 34 -40 26 v34 h-140 v-34 c-26 8 -40 -10 -40 -26 s14 -34 40 -26 z"
+        transform="translate(0 4) scale(1 0.98)" fill="url(#g)" stroke="#F06B7A" stroke-width="5" stroke-linejoin="round"/>
+  <!-- 반짝 -->
+  <path d="M58 76 q6 -8 18 -8" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none" opacity=".8"/>
+  <!-- 얼굴 -->
+  <ellipse cx="86" cy="118" rx="10" ry="12" fill="#4A3740"/>
+  <ellipse cx="134" cy="118" rx="10" ry="12" fill="#4A3740"/>
+  <circle cx="90" cy="113" r="4" fill="#fff"/>
+  <circle cx="138" cy="113" r="4" fill="#fff"/>
+  <ellipse cx="68" cy="140" rx="12" ry="7" fill="#FF6F86" opacity=".55"/>
+  <ellipse cx="152" cy="140" rx="12" ry="7" fill="#FF6F86" opacity=".55"/>
+  <path d="M98 138 q12 14 24 0" stroke="#4A3740" stroke-width="5" stroke-linecap="round" fill="none"/>
+</svg>

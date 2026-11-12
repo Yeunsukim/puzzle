@@ -1,0 +1,19 @@
+{
+  "name": "puzzle-friends",
+  "version": "1.0.0",
+  "description": "친구랑 같이 맞추는 온라인 조각 퍼즐",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "google-auth-library": "^9.15.1",
+    "pg": "^8.23.1",
+    "socket.io": "^4.8.1"
+  }
+}
