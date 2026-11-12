@@ -14,6 +14,12 @@ export class Board {
     const built = buildPieces(o.image, o.crop, o.cols, o.rows, o.edges, o.S);
     this.big = built.big; this.sprites = built.sprites; this.paths = built.paths; this.padW = built.padWorld;
     this.hitCtx = document.createElement('canvas').getContext('2d');
+    // 틀 안의 칸 선: 직선 대신 각 칸에 들어갈 조각 모양 그대로 (꼬불꼬불한 선)
+    this.gridPath = new Path2D();
+    for (let i = 0; i < this.paths.length; i++) {
+      const c = i % o.cols, r = Math.floor(i / o.cols);
+      this.gridPath.addPath(this.paths[i], new DOMMatrix().translate(c * o.S, r * o.S));
+    }
     this.cam = { x: 0, y: 0, z: 1 };
     this.minZ = 0.05; this.maxZ = 3;
     this.hint = false;
@@ -388,12 +394,13 @@ export class Board {
     ctx.fillStyle = th.cell;
     ctx.fillRect(0, 0, W, H);
     if (this.hint) { ctx.globalAlpha = 0.3; ctx.drawImage(this.big, 0, 0, W, H); ctx.globalAlpha = 1; }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip(); // 틀 바깥으로 삐져나온 꼭지 선은 감춘다
     ctx.strokeStyle = th.grid;
-    ctx.lineWidth = Math.max(1 / z, S * 0.012);
-    ctx.beginPath();
-    for (let i = 1; i < this.cols; i++) { ctx.moveTo(i * S, 0); ctx.lineTo(i * S, H); }
-    for (let i = 1; i < this.rows; i++) { ctx.moveTo(0, i * S); ctx.lineTo(W, i * S); }
-    ctx.stroke();
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(1.2 / z, S * 0.016);
+    ctx.stroke(this.gridPath);
+    ctx.restore();
     ctx.strokeStyle = th.edge;
     ctx.lineWidth = Math.max(2 / z, S * 0.02);
     ctx.strokeRect(0, 0, W, H);

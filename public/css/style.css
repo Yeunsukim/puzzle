@@ -29,7 +29,7 @@
   --note-bg: #FBF1DC; --note-line: #EBD9B0;
   --danger: #B4432F; --danger-bg: #FBEDE9; --danger-line: #E3B6AB;
   /* 퍼즐판 색 */
-  --board-frame: #FFFFFF; --board-cell: #EFE8DA; --board-grid: rgba(20,32,43,.14); --board-edge: #1D4E73;
+  --board-frame: #FFFFFF; --board-cell: #EFE8DA; --board-grid: rgba(20,32,43,.26); --board-edge: #1D4E73;
   --stage-dot: rgba(20,32,43,.07); --stage-glow: #FFFDF8;
   color-scheme: light;
 }
@@ -46,7 +46,7 @@
     --photo: #E9E3D6; --glass: rgba(14, 24, 34, .9); --dim: rgba(0, 0, 0, .6);
     --note-bg: #2E2717; --note-line: #4D4024;
     --danger: #F09A86; --danger-bg: #3A1E18; --danger-line: #6B3A30;
-    --board-frame: #1C2B3A; --board-cell: #233545; --board-grid: rgba(238,232,220,.12); --board-edge: #74BEE4;
+    --board-frame: #1C2B3A; --board-cell: #233545; --board-grid: rgba(238,232,220,.24); --board-edge: #74BEE4;
     --stage-dot: rgba(238,232,220,.07); --stage-glow: #172532;
     color-scheme: dark;
   }
@@ -62,7 +62,7 @@
   --photo: #E9E3D6; --glass: rgba(14, 24, 34, .9); --dim: rgba(0, 0, 0, .6);
   --note-bg: #2E2717; --note-line: #4D4024;
   --danger: #F09A86; --danger-bg: #3A1E18; --danger-line: #6B3A30;
-  --board-frame: #1C2B3A; --board-cell: #233545; --board-grid: rgba(238,232,220,.12); --board-edge: #74BEE4;
+  --board-frame: #1C2B3A; --board-cell: #233545; --board-grid: rgba(238,232,220,.24); --board-edge: #74BEE4;
   --stage-dot: rgba(238,232,220,.07); --stage-glow: #172532;
   color-scheme: dark;
 }
