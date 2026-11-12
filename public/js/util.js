@@ -10,6 +10,21 @@ export const AVATARS = [
 ];
 export const avatarUrl = id => `/assets/characters/${AVATARS.some(a => a.id === id) ? id : 'bunny'}.svg`;
 
+// ---- 밝은 화면 / 어두운 화면 ----
+// 'light'(밝게) · 'dark'(어둡게) · 'auto'(기기 설정 따르기)
+const darkMQ = matchMedia('(prefers-color-scheme: dark)');
+export function getTheme() {
+  try { return localStorage.getItem('theme') || 'auto'; } catch { return 'auto'; }
+}
+export const isDark = () => { const t = getTheme(); return t === 'dark' || (t === 'auto' && darkMQ.matches); };
+export function setTheme(t) {
+  try { if (t === 'auto') localStorage.removeItem('theme'); else localStorage.setItem('theme', t); } catch { /* 무시 */ }
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  window.dispatchEvent(new Event('themechange'));
+}
+darkMQ.addEventListener('change', () => window.dispatchEvent(new Event('themechange')));
+
 // 화면 위에 대화 상자 띄우기. data-close 가 붙은 단추나 바깥을 누르면 닫힌다.
 export function openModal(html, { onClose, sticky } = {}) {
   const bg = document.createElement('div');

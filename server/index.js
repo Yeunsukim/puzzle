@@ -100,7 +100,11 @@ app.get('/uploads/:name', ah(async (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
   res.end(Buffer.from(img.data));
 }));
-app.use(express.static(path.join(ROOT, 'public'), { extensions: ['html'] }));
+// 화면 파일(html·css·js)은 고친 내용이 바로 보이도록 매번 새 버전인지 확인하게 한다
+app.use(express.static(path.join(ROOT, 'public'), {
+  extensions: ['html'],
+  setHeaders: (res, file) => { if (/\.(html|css|js)$/.test(file)) res.setHeader('Cache-Control', 'no-cache'); },
+}));
 
 // 오류가 나면 서버가 멈추지 않고 알려 주기
 app.use((err, _req, res, _next) => {

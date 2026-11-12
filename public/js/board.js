@@ -44,6 +44,11 @@ export class Board {
     canvas.addEventListener('wheel', this.onWheel, { passive: false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
 
+    // 밝은/어두운 화면에 맞는 퍼즐판 색 (CSS에 적어 둔 색을 읽어 온다)
+    this.readTheme();
+    this.onTheme = () => { this.readTheme(); this.need = true; };
+    window.addEventListener('themechange', this.onTheme);
+
     this.alive = true;
     const tick = () => { if (!this.alive) return; this.step(); requestAnimationFrame(tick); };
     requestAnimationFrame(tick);
@@ -52,6 +57,16 @@ export class Board {
   destroy() {
     this.alive = false;
     this.ro.disconnect();
+    window.removeEventListener('themechange', this.onTheme);
+  }
+
+  readTheme() {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (name, d) => cs.getPropertyValue(name).trim() || d;
+    this.theme = {
+      frame: v('--board-frame', '#FFFFFF'), cell: v('--board-cell', '#EFE8DA'),
+      grid: v('--board-grid', 'rgba(20,32,43,.14)'), edge: v('--board-edge', '#1D4E73'),
+    };
   }
 
   // ---- 상태 ----
@@ -287,19 +302,20 @@ export class Board {
     ctx.shadowColor = 'rgba(18,50,75,.25)';
     ctx.shadowBlur = 40;
     ctx.shadowOffsetY = 10;
-    ctx.fillStyle = '#FFFFFF';
+    const th = this.theme;
+    ctx.fillStyle = th.frame;
     ctx.beginPath(); ctx.roundRect(-fp, -fp, W + fp * 2, H + fp * 2, S * 0.06); ctx.fill();
     ctx.restore();
-    ctx.fillStyle = '#EFE8DA';
+    ctx.fillStyle = th.cell;
     ctx.fillRect(0, 0, W, H);
     if (this.hint) { ctx.globalAlpha = 0.3; ctx.drawImage(this.big, 0, 0, W, H); ctx.globalAlpha = 1; }
-    ctx.strokeStyle = 'rgba(20,32,43,.14)';
+    ctx.strokeStyle = th.grid;
     ctx.lineWidth = Math.max(1 / z, S * 0.012);
     ctx.beginPath();
     for (let i = 1; i < this.cols; i++) { ctx.moveTo(i * S, 0); ctx.lineTo(i * S, H); }
     for (let i = 1; i < this.rows; i++) { ctx.moveTo(0, i * S); ctx.lineTo(W, i * S); }
     ctx.stroke();
-    ctx.strokeStyle = '#1D4E73';
+    ctx.strokeStyle = th.edge;
     ctx.lineWidth = Math.max(2 / z, S * 0.02);
     ctx.strokeRect(0, 0, W, H);
 

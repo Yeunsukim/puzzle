@@ -1,6 +1,6 @@
 // 화면 전환: 로그인 → 캐릭터 고르기 → 홈 → 퍼즐 고르기/만들기 → 게임방 → 내 기록 / 친구
 // 왼쪽 위 메뉴(줄 세 개) 서랍, 친구 초대 알림도 여기서 관리한다.
-import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal } from './util.js';
+import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal, getTheme, setTheme, isDark } from './util.js';
 import { openRoom } from './game.js';
 
 const app = $('#app');
@@ -237,12 +237,20 @@ function renderDrawer() {
       ${item('#/records', '★', '내 기록', 'records')}
       ${item('#/profile', '✎', '캐릭터·별명 바꾸기', 'profile')}
     </nav></div>
+    <div class="drawer-sec"><h4>화면 밝기</h4>
+      <div class="theme-pick" id="d-theme">
+        <button data-t="light">☀ 밝게</button><button data-t="dark">☾ 어둡게</button><button data-t="auto">기기 설정</button>
+      </div>
+    </div>
     <div class="drawer-sec"><h4>내 친구 코드</h4>
       <div class="code-box"><span class="code-big" style="font-size:30px">${esc(social.code)}</span><button class="btn light small" id="d-copy">복사</button></div>
       <p class="muted" style="font-size:17px;margin-top:6px">친구에게 이 코드를 알려 주면 나를 친구로 추가할 수 있어요.</p>
     </div>
     <div class="drawer-foot"><button class="btn line wide" id="d-logout">로그아웃</button></div>`;
   $('#d-close', drawer).addEventListener('click', closeDrawer);
+  const markTheme = () => $$('#d-theme button', drawer).forEach(b => b.classList.toggle('on', b.dataset.t === getTheme()));
+  markTheme();
+  $$('#d-theme button', drawer).forEach(b => b.addEventListener('click', () => { setTheme(b.dataset.t); markTheme(); }));
   $$('a', drawer).forEach(a => a.addEventListener('click', () => { if (a.getAttribute('href') === location.hash) closeDrawer(); }));
   $('#d-copy', drawer).addEventListener('click', async () => toast(await copyText(social.code) ? '친구 코드를 복사했어요.' : '복사가 안 됐어요. 코드를 직접 알려 주세요.'));
   $('#d-logout', drawer).addEventListener('click', async () => {
@@ -261,9 +269,20 @@ function topbar() {
     <button class="menu-btn" id="menu-open" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
     <a class="logo" href="#/home"><img src="/assets/logo.svg" alt=""><span>퍼즐 친구들</span></a>
     <a class="btn top-cta" href="#/start">퍼즐 시작하기</a>
+    ${themeBtn()}
     <button class="me-btn" id="me-open" aria-label="내 정보 보기"><img src="${avatarUrl(me.avatar)}" alt=""></button>
   </div></header>`;
 }
+// 한 번 누르면 밝게 ↔ 어둡게
+const themeBtn = () => `<button class="theme-btn" id="theme-toggle" aria-label="${isDark() ? '밝은 화면으로' : '어두운 화면으로'}" title="${isDark() ? '밝은 화면으로' : '어두운 화면으로'}">${isDark() ? '☀' : '☾'}</button>`;
+function bindThemeBtn() {
+  const b = $('#theme-toggle');
+  b?.addEventListener('click', () => setTheme(isDark() ? 'light' : 'dark'));
+}
+window.addEventListener('themechange', () => {
+  const b = $('#theme-toggle');
+  if (b) b.outerHTML = themeBtn(), bindThemeBtn();
+});
 const footer = () => `
   <footer class="site-foot"><div class="site-foot-in">
     <a class="logo" href="#/home"><img src="/assets/logo.svg" alt=""><span>퍼즐 친구들</span></a>
@@ -273,10 +292,11 @@ function shell(html) {
   app.innerHTML = topbar() + html + footer();
   $('#menu-open').addEventListener('click', openDrawer);
   $('#me-open').addEventListener('click', openDrawer);
+  bindThemeBtn();
   updateBadges();
 }
 const fan = urls => `<div class="fan" aria-hidden="true">${urls.map(u => `<div class="pc" style="background-image:url('${u}')"></div>`).join('')}</div>`;
-const wave = `<svg class="hero-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30C240 0 480 60 720 30S1200 0 1440 30V60H0Z" fill="#F7F3EA"/></svg>`;
+const wave = `<svg class="hero-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30C240 0 480 60 720 30S1200 0 1440 30V60H0Z" fill="var(--paper)"/></svg>`;
 
 // ---------------- 로그인 / 가입 ----------------
 function renderLogin(mode = 'login') {

@@ -322,12 +322,13 @@ export function attachSockets(io) {
       afterChange(changed, locked);
     });
 
-    socket.on('rotate', id => {
+    // 돌리기: dir = 1 이면 오른쪽(시계 방향), -1 이면 왼쪽(시계 반대 방향)으로 90도
+    socket.on('rotate', (id, dir) => {
       if (!validId(id) || room.state.finishedAt) return;
       const p = room.state.pieces[id];
       const holder = room.held.get(id);
       if (p.locked || (holder && holder !== uid)) return;
-      p.rot = (p.rot + 1) % 4;
+      p.rot = (p.rot + (dir === -1 ? 3 : 1)) % 4;
       const locked = [];
       tryLock(room, p, uid, locked);
       afterChange([p], locked);

@@ -8,7 +8,8 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
     <aside class="side">
       <div class="side-top">
         <button class="menu-btn" id="g-menu-open" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
-        <a class="btn light home-btn" href="#/home">← 홈으로</a>
+        <a class="btn light home-btn" href="#/home">← 홈</a>
+        <button class="btn light fold-btn" id="g-fold" aria-label="정보판 접기">◀ 접기</button>
       </div>
       <div class="info-block"><div class="info-label">퍼즐</div><div class="info-val" id="g-title">...</div></div>
       <div class="info-block hide-sm"><div class="info-label">조각</div><div class="info-val" id="g-count">-</div></div>
@@ -23,6 +24,11 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
     </aside>
     <main class="stage" id="stage">
       <canvas id="board" aria-label="퍼즐판"></canvas>
+      <div class="side-mini" id="g-unfold-box">
+        <button class="menu-btn" id="g-menu-open2" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
+        <button class="btn light" id="g-unfold" aria-label="정보판 펼치기">▶ 정보판</button>
+        <span class="mini-stat" id="g-mini-stat"></span>
+      </div>
       <div class="zoom">
         <button class="zbtn" id="z-in" aria-label="크게 보기">＋<small>크게</small></button>
         <button class="zbtn" id="z-out" aria-label="작게 보기">－<small>작게</small></button>
@@ -30,9 +36,12 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
         <button class="zbtn" id="z-hint" aria-label="밑그림 보기">👁<small>밑그림</small></button>
       </div>
       <button class="mini" id="g-mini" aria-label="완성 그림 크게 보기"><img id="g-mini-img" alt=""><span>완성 그림</span></button>
-      <div class="hint-help" id="g-help">👆 조각을 <b>누른 채 끌어서</b> 틀에 놓아요.<br>조각을 <b>한 번 누르면</b> 돌리기 메뉴가 나와요.</div>
+      <div class="hint-help" id="g-help">조각을 <b>누른 채 끌어서</b> 틀에 놓아요.<br>조각을 <b>한 번 누르면</b> 왼쪽·오른쪽 돌리기 메뉴가 나와요.</div>
       <div class="piece-menu" id="g-menu" hidden>
-        <button class="btn" id="m-rot">↻ 돌리기</button>
+        <div class="rot-row">
+          <button class="btn" id="m-rot-l" aria-label="왼쪽으로 돌리기"><span class="big-ic">↺</span>왼쪽으로</button>
+          <button class="btn" id="m-rot-r" aria-label="오른쪽으로 돌리기"><span class="big-ic">↻</span>오른쪽으로</button>
+        </div>
         <button class="btn light" id="m-out">⇱ 밖으로 빼기</button>
         <button class="btn light" id="m-close">✕ 닫기</button>
       </div>
@@ -52,6 +61,17 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
   };
 
   $('#g-menu-open').addEventListener('click', openDrawer);
+  $('#g-menu-open2').addEventListener('click', openDrawer);
+  // 정보판 접기/펼치기 (고른 것을 기억. 처음엔 좁은 화면이면 접어 둔다)
+  const setFolded = folded => {
+    root.querySelector('.game').classList.toggle('folded', folded);
+    try { localStorage.setItem('sideFolded', folded ? '1' : '0'); } catch { /* 무시 */ }
+  };
+  let savedFold = null;
+  try { savedFold = localStorage.getItem('sideFolded'); } catch { /* 무시 */ }
+  setFolded(savedFold === null ? innerWidth < 1100 : savedFold === '1');
+  $('#g-fold').addEventListener('click', () => setFolded(true));
+  $('#g-unfold').addEventListener('click', () => setFolded(false));
   const showError = (msg, full) => {
     $('#g-loading').innerHTML = `<div class="stack" style="align-items:center;padding:20px">
       <img src="/assets/logo.svg" alt="" style="animation:none">
@@ -163,12 +183,19 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
     const pct = Math.floor(done / n * 100);
     $('#g-pct').textContent = `${pct}% (${done}/${n})`;
     $('#g-bar').style.width = (done / n * 100) + '%';
+    updateMiniStat();
   }
   function updateTime() {
     const s = state.snap;
     if (!s?.startedAt) return;
     const end = s.finishedAt || (Date.now() + state.clockOffset);
     $('#g-time').textContent = clock((end - s.startedAt) / 1000);
+    updateMiniStat();
+  }
+  // 정보판을 접었을 때 보이는 짧은 상태: 걸린 시간 · 맞춘 조각
+  function updateMiniStat() {
+    if (!state.board) return;
+    $('#g-mini-stat').textContent = `${$('#g-time').textContent} · ${state.board.lockedCount}/${state.board.pieces.length}조각`;
   }
 
   // ---- 조각 메뉴 ----
@@ -185,7 +212,8 @@ export async function openRoom(root, code, { me, config, openDrawer, getSocial, 
     menu.style.top = y + 'px';
   }
   function hideMenu() { state.menuFor = -1; $('#g-menu').hidden = true; }
-  $('#m-rot').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('rotate', state.menuFor); });
+  $('#m-rot-l').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('rotate', state.menuFor, -1); });
+  $('#m-rot-r').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('rotate', state.menuFor, 1); });
   $('#m-out').addEventListener('click', () => { if (state.menuFor >= 0) socket.emit('eject', state.menuFor); hideMenu(); });
   $('#m-close').addEventListener('click', hideMenu);
 
