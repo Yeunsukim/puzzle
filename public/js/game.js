@@ -234,12 +234,14 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       S: snap.S, cols: snap.cols, rows: snap.rows, edges: snap.edges, pieces: snap.pieces, image, crop, me: me.id,
       playerInfo,
       onGrab: id => {
-        hideMenu();
+        // 고른 조각을 끌면 흰 테두리는 그대로 두고 메뉴만 닫는다. 다른 조각을 끌면 선택 해제.
+        if (state.board.selected === id) closeMenu(); else hideMenu();
         socket.emit('grab', id, (ok, s) => { if (!ok) { state.board.cancelDrag(id, s); toast('다른 친구가 잡고 있는 조각이에요.'); } });
       },
       onMove: (id, x, y) => socket.volatile.emit('move', { id, x, y }),
       onDrop: (id, x, y) => socket.emit('drop', { id, x, y }),
       onClickPiece: (id, pt) => showMenu(id, pt),
+      onDoubleClickPiece: id => { closeMenu(); state.board.setSelected(id); },
       onClickEmpty: () => hideMenu(),
       // '누른 곳으로 옮기기': 잡았다가 바로 그 자리에 놓는다
       onTapMove: (id, x, y) => {

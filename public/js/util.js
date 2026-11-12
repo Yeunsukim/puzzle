@@ -38,13 +38,16 @@ export function openModal(html, { onClose, sticky } = {}) {
 }
 
 export const COUNTS = [
-  { n: 10, label: '아이 · 아주 쉬움' },
+  // 96 다음부터는 가로:세로가 4:3 인 칸 수 (16×12, 20×15, 24×18, 36×27)
+  { n: 6, label: '아이 · 아주 쉬움' },
+  { n: 12, label: '아이 · 쉬움' },
   { n: 24, label: '쉬움' },
   { n: 48, label: '보통' },
-  { n: 100, label: '조금 어려움' },
-  { n: 300, label: '어려움' },
-  { n: 500, label: '아주 어려움' },
-  { n: 1000, label: '어른 · 도전!' },
+  { n: 96, label: '조금 어려움' },
+  { n: 192, label: '어려움' },
+  { n: 300, label: '아주 어려움' },
+  { n: 432, label: '도전' },
+  { n: 972, label: '어른 · 최고 도전!' },
 ];
 
 export const $ = (sel, el = document) => el.querySelector(sel);
@@ -76,6 +79,9 @@ export function toast(msg, ms = 2800) {
 // 조각 수 n과 그림 비율에 가장 잘 맞는 가로×세로 칸 수
 // 가로×세로가 정확히 n이 되는 짝 중에서 그림 모양에 가장 가까운 것을 고른다.
 export function gridFor(n, aspect) {
+  // 96보다 큰 조각 수는 항상 가로:세로 4:3 (세로 사진이면 3:4)
+  const k = Math.sqrt(n / 12);
+  if (n > 96 && Number.isInteger(k)) return aspect >= 1 ? { cols: 4 * k, rows: 3 * k } : { cols: 3 * k, rows: 4 * k };
   let best = null;
   for (let rows = 2; rows <= n / 2; rows++) {
     if (n % rows) continue;

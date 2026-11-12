@@ -205,7 +205,8 @@ export class Board {
     // 고른 조각은 1.5배로 크게 그려져 있으니 그 크기대로 먼저 확인
     const sel = this.pieces[this.selected];
     if (sel && !sel.locked) {
-      const dx = (wx - (sel.x + half)) / 1.5, dy = (wy - (sel.y + half)) / 1.5;
+      const sk = this.inFrame(sel) ? 1 : 1.5;
+      const dx = (wx - (sel.x + half)) / sk, dy = (wy - (sel.y + half)) / sk;
       const a = -sel.rot * Math.PI / 2;
       const lx = dx * Math.cos(a) - dy * Math.sin(a) + half;
       const ly = dx * Math.sin(a) + dy * Math.cos(a) + half;
@@ -337,7 +338,15 @@ export class Board {
         const id = this.moveMode;
         this.moveMode = -1;
         this.o.onTapMove?.(id, w.x - this.S / 2, w.y - this.S / 2);
-      } else if (ptr.piece >= 0) this.o.onClickPiece(ptr.piece, { x: e.clientX, y: e.clientY });
+      } else if (ptr.piece >= 0) {
+        // 틀 밖 조각을 빠르게 두 번 누르면: 골라서 크게 보여 주고 메뉴는 닫는다 (바로 끌어 옮기기 좋게)
+        const now = performance.now(), last = this.lastTap;
+        this.lastTap = { id: ptr.piece, t: now };
+        if (last && last.id === ptr.piece && now - last.t < 450 && !this.inFrame(this.pieces[ptr.piece])) {
+          this.lastTap = null;
+          this.o.onDoubleClickPiece?.(ptr.piece);
+        } else this.o.onClickPiece(ptr.piece, { x: e.clientX, y: e.clientY });
+      }
       else this.o.onClickEmpty?.();
     }
     this.need = true;
@@ -454,17 +463,26 @@ export class Board {
     }
   }
 
+  // 조각 가운데가 틀 안에 있는지
+  inFrame(p) {
+    const cx = p.rx + this.S / 2, cy = p.ry + this.S / 2;
+    return cx >= 0 && cx <= this.W && cy >= 0 && cy <= this.H;
+  }
+
   drawPiece(p) {
     const { ctx, S } = this;
     const half = S / 2, pw = this.padW;
     const dragging = this.drag && this.drag.id === p.id;
     const other = !p.locked && p.held && p.held !== this.me ? this.o.playerInfo(p.held) : null;
-    const picked = p.id === this.selected && !p.locked && !dragging;
+    const picked = p.id === this.selected && !p.locked;
+    // 틀 밖에서는 1.5배로 크게, 틀 안으로 들어오면 흰 테두리만 남기고 원래 크기
+    const big = picked && !this.inFrame(p);
+    const k = big ? 1.5 : 1;
     ctx.save();
     ctx.translate(p.rx + half, p.ry + half);
     if (p.ang % 360) ctx.rotate(p.ang * Math.PI / 180);
     if (picked) {
-      ctx.scale(1.5, 1.5);
+      ctx.scale(k, k);
       ctx.shadowColor = 'rgba(0,0,0,.45)';
       ctx.shadowBlur = 24;
       ctx.shadowOffsetY = 6;
@@ -481,10 +499,10 @@ export class Board {
       ctx.translate(-half, -half);
       ctx.lineJoin = 'round';
       ctx.strokeStyle = 'rgba(20,32,43,.55)';
-      ctx.lineWidth = Math.max(6 / this.cam.z, S * 0.07) / 1.5;
+      ctx.lineWidth = Math.max(6 / this.cam.z, S * 0.07) / k;
       ctx.stroke(this.paths[p.id]);
       ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = Math.max(3.5 / this.cam.z, S * 0.045) / 1.5;
+      ctx.lineWidth = Math.max(3.5 / this.cam.z, S * 0.045) / k;
       ctx.stroke(this.paths[p.id]);
     } else if (other || p.id === this.moveMode) {
       ctx.shadowColor = 'transparent';

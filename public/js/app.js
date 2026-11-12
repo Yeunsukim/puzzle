@@ -2,6 +2,7 @@
 // 왼쪽 위 메뉴(줄 세 개) 서랍, 친구 초대 알림도 여기서 관리한다.
 import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal, getTheme, setTheme, isDark } from './util.js';
 import { openRoom } from './game.js';
+import { piecePath, pieceDirs } from './jigsaw.js';
 
 const app = $('#app');
 let me = null;
@@ -532,12 +533,29 @@ function drawGridPreview(cv, img, grid) {
   cv.width = W; cv.height = H;
   ctx.drawImage(img, c.sx, c.sy, c.sw, c.sh, 0, 0, W, H);
   if (!grid) return;
-  ctx.strokeStyle = 'rgba(255,255,255,.85)';
-  ctx.lineWidth = g.cols > 30 ? 1 : 3;
-  ctx.beginPath();
-  for (let i = 1; i < g.cols; i++) { const x = Math.round(W * i / g.cols) + .5; ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-  for (let i = 1; i < g.rows; i++) { const y = Math.round(H * i / g.rows) + .5; ctx.moveTo(0, y); ctx.lineTo(W, y); }
-  ctx.stroke();
+  // 칸 선을 실제 조각 모양(볼록·오목)으로 그린다. 볼록·오목 방향은 보기용으로 고정된 무늬를 쓴다.
+  let seed = g.cols * 131 + g.rows * 71;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const flip = () => (rnd() < 0.5 ? 1 : -1);
+  const edges = {
+    h: Array.from({ length: g.rows - 1 }, () => Array.from({ length: g.cols }, flip)),
+    v: Array.from({ length: g.rows }, () => Array.from({ length: g.cols - 1 }, flip)),
+  };
+  const cell = W / g.cols;
+  const all = new Path2D();
+  for (let r = 0; r < g.rows; r++) {
+    for (let col = 0; col < g.cols; col++) {
+      all.addPath(piecePath(cell, pieceDirs(r, col, g.rows, g.cols, edges), 0), new DOMMatrix().translate(col * cell, r * cell));
+    }
+  }
+  const thin = g.cols > 30;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(20,32,43,.45)';
+  ctx.lineWidth = thin ? 2 : 5;
+  ctx.stroke(all);
+  ctx.strokeStyle = 'rgba(255,255,255,.92)';
+  ctx.lineWidth = thin ? 1 : 2.5;
+  ctx.stroke(all);
 }
 
 async function startRoom(pictureId, grid, btn) {
