@@ -148,7 +148,18 @@ button, input, select { font: inherit; color: inherit; }
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
 }
 .menu-btn:hover { border-color: var(--ink); }
-.menu-btn i { display: block; width: 30px; height: 3px; border-radius: 2px; background: var(--ink); }
+.menu-btn .fa-bars { font-size: 26px; line-height: 1; color: var(--ink); }
+/* 아이콘 공통 */
+.btn .fa-solid { font-size: .95em; }
+.nav-item .ic .fa-solid { font-size: 20px; color: var(--blue-d); }
+.theme-btn .fa-solid { font-size: 24px; }
+.theme-pick .fa-solid { margin-right: 4px; }
+.zbtn .fa-solid { font-size: 28px; }
+.piece-menu .big-ic .fa-solid { font-size: 28px; }
+.add-card .thumb .fa-solid { font-size: 48px; color: var(--blue-d); }
+.drop-zone .ic .fa-solid { font-size: 40px; color: var(--blue-d); }
+.silence-btn .fa-solid { font-size: 18px; }
+.v-ic .fa-solid { font-size: 14px; color: var(--teal-d); }
 .menu-btn small { font-size: 14px; font-weight: 700; line-height: 1; margin-top: 3px; }
 .badge {
   position: absolute; top: -8px; right: -8px; min-width: 30px; height: 30px; padding: 0 8px;

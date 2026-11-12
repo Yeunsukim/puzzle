@@ -131,7 +131,7 @@ function showInvitePopup(inv) {
     <div class="inv-pic"><div class="thumb" style="background-image:url('${esc(inv.room.url)}')"></div>
       <div><b>${esc(inv.room.title)}</b><span class="muted">${inv.room.pieces}조각 · 지금 ${inv.room.online}명이 맞추는 중</span></div></div>
     <div class="stack">
-      <button class="btn big wide" data-act="inv-yes" data-id="${inv.id}">수락하고 같이하기</button>
+      <button class="btn big wide" data-act="inv-yes" data-id="${inv.id}"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> 수락하고 같이하기</button>
       <button class="btn line wide" data-act="inv-no" data-id="${inv.id}">이번엔 거절하기</button>
       <button class="btn light wide" data-close>나중에 정하기</button>
     </div>`);
@@ -214,25 +214,25 @@ function noteCards(kind) {
       <div class="note-card">
         <div class="thumb" style="background-image:url('${esc(i.room.url)}')"></div>
         <div class="txt"><b>${esc(i.from.nick)}</b>님이 「${esc(i.room.title)}」 ${i.room.pieces}조각 퍼즐에 초대했어요</div>
-        <div class="acts"><button class="btn" data-act="inv-yes" data-id="${i.id}">수락하고 같이하기</button><button class="btn line" data-act="inv-no" data-id="${i.id}">거절</button></div>
+        <div class="acts"><button class="btn" data-act="inv-yes" data-id="${i.id}"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> 수락하고 같이하기</button><button class="btn line" data-act="inv-no" data-id="${i.id}">거절</button></div>
       </div>`).join('');
   }
   return social.requests.map(r => `
     <div class="note-card">
       <img src="${avatarUrl(r.from.avatar)}" alt="" style="width:64px;height:64px;border-radius:50%;background:var(--sky);padding:4px">
       <div class="txt"><b>${esc(r.from.nick)}</b>님이 친구 신청을 했어요</div>
-      <div class="acts"><button class="btn" data-act="req-yes" data-id="${r.id}">수락</button><button class="btn line" data-act="req-no" data-id="${r.id}">거절</button></div>
+      <div class="acts"><button class="btn" data-act="req-yes" data-id="${r.id}"><i class="fa-solid fa-check" aria-hidden="true"></i> 수락</button><button class="btn line" data-act="req-no" data-id="${r.id}">거절</button></div>
     </div>`).join('');
 }
 
 function renderDrawer() {
   const page = (location.hash.split('/')[1] || 'home');
-  const item = (href, ic, label, key, cnt) => `<a class="nav-item ${page === key ? 'on' : ''}" href="${href}"><span class="ic">${ic}</span>${label}${cnt ? `<span class="cnt">${cnt}</span>` : ''}</a>`;
+  const item = (href, ic, label, key, cnt) => `<a class="nav-item ${page === key ? 'on' : ''}" href="${href}"><span class="ic"><i class="fa-solid fa-${ic}" aria-hidden="true"></i></span>${label}${cnt ? `<span class="cnt">${cnt}</span>` : ''}</a>`;
   const alerts = social.invites.length + social.requests.length;
   drawer.innerHTML = `
     <div class="drawer-top">
       <a class="logo" href="#/home"><img src="/assets/logo.svg" alt=""><span>퍼즐 친구들</span></a>
-      <button class="close-btn" id="d-close">✕ 닫기</button>
+      <button class="close-btn" id="d-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 닫기</button>
     </div>
     <div class="profile-card">
       <div class="who"><img src="${avatarUrl(me.avatar)}" alt="">
@@ -246,24 +246,24 @@ function renderDrawer() {
     </div>
     ${alerts ? `<div class="drawer-sec"><h4>새 알림 ${alerts}개</h4>${noteCards('invites')}${noteCards('requests')}</div>` : ''}
     <div class="drawer-sec"><h4>메뉴</h4><nav class="nav-list">
-      ${item('#/home', '⌂', '홈', 'home')}
-      ${item('#/start', '◆', '퍼즐 시작하기', 'start')}
-      ${item('#/saved', '▶', '하던 퍼즐 이어하기', 'saved')}
-      ${item('#/create', '▣', '내 사진으로 만들기', 'create')}
-      ${item('#/friends', '☺', '친구', 'friends', social.requests.length)}
-      ${item('#/records', '★', '내 기록', 'records')}
-      ${item('#/profile', '✎', '캐릭터·별명 바꾸기', 'profile')}
+      ${item('#/home', 'house', '홈', 'home')}
+      ${item('#/start', 'puzzle-piece', '퍼즐 시작하기', 'start')}
+      ${item('#/saved', 'clock-rotate-left', '하던 퍼즐 이어하기', 'saved')}
+      ${item('#/create', 'image', '내 사진으로 만들기', 'create')}
+      ${item('#/friends', 'user-group', '친구', 'friends', social.requests.length)}
+      ${item('#/records', 'trophy', '내 기록', 'records')}
+      ${item('#/profile', 'pen', '캐릭터·별명 바꾸기', 'profile')}
     </nav></div>
     <div class="drawer-sec"><h4>화면 밝기</h4>
       <div class="theme-pick" id="d-theme">
-        <button data-t="light">☀ 밝게</button><button data-t="dark">☾ 어둡게</button><button data-t="auto">기기 설정</button>
+        <button data-t="light"><i class="fa-solid fa-sun" aria-hidden="true"></i> 밝게</button><button data-t="dark"><i class="fa-solid fa-moon" aria-hidden="true"></i> 어둡게</button><button data-t="auto"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> 기기 설정</button>
       </div>
     </div>
     <div class="drawer-sec"><h4>내 친구 코드</h4>
-      <div class="code-box"><span class="code-big" style="font-size:30px">${esc(social.code)}</span><button class="btn light small" id="d-copy">복사</button></div>
+      <div class="code-box"><span class="code-big" style="font-size:30px">${esc(social.code)}</span><button class="btn light small" id="d-copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> 복사</button></div>
       <p class="muted" style="font-size:17px;margin-top:6px">친구에게 이 코드를 알려 주면 나를 친구로 추가할 수 있어요.</p>
     </div>
-    <div class="drawer-foot"><button class="btn line wide" id="d-logout">로그아웃</button></div>`;
+    <div class="drawer-foot"><button class="btn line wide" id="d-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 로그아웃</button></div>`;
   $('#d-close', drawer).addEventListener('click', closeDrawer);
   const markTheme = () => $$('#d-theme button', drawer).forEach(b => b.classList.toggle('on', b.dataset.t === getTheme()));
   markTheme();
@@ -283,15 +283,15 @@ function renderDrawer() {
 function topbar() {
   return `
   <header class="topbar"><div class="topbar-in">
-    <button class="menu-btn" id="menu-open" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
+    <button class="menu-btn" id="menu-open" aria-label="메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><small>메뉴</small></button>
     <a class="logo" href="#/home"><img src="/assets/logo.svg" alt=""><span>퍼즐 친구들</span></a>
-    <a class="btn top-cta" href="#/start">퍼즐 시작하기</a>
+    <a class="btn top-cta" href="#/start"><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 퍼즐 시작하기</a>
     ${themeBtn()}
     <button class="me-btn" id="me-open" aria-label="내 정보 보기"><img src="${avatarUrl(me.avatar)}" alt=""></button>
   </div></header>`;
 }
 // 한 번 누르면 밝게 ↔ 어둡게
-const themeBtn = () => `<button class="theme-btn" id="theme-toggle" aria-label="${isDark() ? '밝은 화면으로' : '어두운 화면으로'}" title="${isDark() ? '밝은 화면으로' : '어두운 화면으로'}">${isDark() ? '☀' : '☾'}</button>`;
+const themeBtn = () => `<button class="theme-btn" id="theme-toggle" aria-label="${isDark() ? '밝은 화면으로' : '어두운 화면으로'}" title="${isDark() ? '밝은 화면으로' : '어두운 화면으로'}">${isDark() ? '<i class="fa-solid fa-sun" aria-hidden="true"></i>' : '<i class="fa-solid fa-moon" aria-hidden="true"></i>'}</button>`;
 function bindThemeBtn() {
   const b = $('#theme-toggle');
   b?.addEventListener('click', () => setTheme(isDark() ? 'light' : 'dark'));
@@ -436,22 +436,22 @@ async function renderHome() {
       <span class="eyebrow">${esc(me.nick)}님, 반가워요</span>
       <h1>오늘은 어떤 그림을<br><em>함께</em> 맞춰 볼까요?</h1>
       <p class="lead">그림과 조각 수를 고르고 친구를 초대하세요. 친구가 초대를 수락하면 같은 퍼즐판에서 실시간으로 함께 맞출 수 있어요.</p>
-      <div class="row"><a class="btn teal big" href="#/start">퍼즐 시작하기</a><a class="btn ghost-w big" href="#/create">내 사진으로 만들기</a></div>
+      <div class="row"><a class="btn teal big" href="#/start"><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 퍼즐 시작하기</a><a class="btn ghost-w big" href="#/create"><i class="fa-solid fa-camera" aria-hidden="true"></i> 내 사진으로 만들기</a></div>
     </div>
     ${fan(ART)}
   </div>${wave}</section>
   <main class="page">
     <div id="home-invites"></div>
     <section class="section" id="home-saved-sec" hidden>
-      <div class="section-head"><div><span class="eyebrow">이어하기</span><h2 style="margin-top:8px">하던 퍼즐</h2><p>저장해 둔 퍼즐을 이어서 맞춰요.</p></div><a class="btn line" href="#/saved">모두 보기</a></div>
+      <div class="section-head"><div><span class="eyebrow">이어하기</span><h2 style="margin-top:8px">하던 퍼즐</h2><p>저장해 둔 퍼즐을 이어서 맞춰요.</p></div><a class="btn line" href="#/saved"><i class="fa-solid fa-list" aria-hidden="true"></i> 모두 보기</a></div>
       <div class="saved-list" id="home-saved"></div>
     </section>
     <section class="section">
-      <div class="section-head"><div><span class="eyebrow">컬렉션</span><h2 style="margin-top:8px">오늘의 그림</h2><p>그림을 누르면 바로 조각 수를 고를 수 있어요.</p></div><a class="btn line" href="#/start">모든 그림 보기</a></div>
+      <div class="section-head"><div><span class="eyebrow">컬렉션</span><h2 style="margin-top:8px">오늘의 그림</h2><p>그림을 누르면 바로 조각 수를 고를 수 있어요.</p></div><a class="btn line" href="#/start"><i class="fa-solid fa-images" aria-hidden="true"></i> 모든 그림 보기</a></div>
       <div class="gallery" id="home-gallery"></div>
     </section>
     <section class="section">
-      <div class="section-head"><div><span class="eyebrow">친구</span><h2 style="margin-top:8px">함께하는 친구들</h2><p>초록 점이 있는 친구는 지금 접속해 있어요.</p></div><a class="btn line" href="#/friends">친구 관리</a></div>
+      <div class="section-head"><div><span class="eyebrow">친구</span><h2 style="margin-top:8px">함께하는 친구들</h2><p>초록 점이 있는 친구는 지금 접속해 있어요.</p></div><a class="btn line" href="#/friends"><i class="fa-solid fa-user-group" aria-hidden="true"></i> 친구 관리</a></div>
       <div id="home-friends"></div>
     </section>
     <section class="section">
@@ -466,7 +466,7 @@ async function renderHome() {
       <div class="card join-box">
         <div style="flex:1 1 280px"><h3>방 번호를 받으셨나요?</h3><p class="muted">친구가 알려 준 6글자를 적고 들어가기를 눌러 주세요.</p></div>
         <input class="input" id="join-code" maxlength="6" placeholder="ABC123" aria-label="방 번호">
-        <button class="btn big" id="join-go">들어가기</button>
+        <button class="btn big" id="join-go"><i class="fa-solid fa-door-open" aria-hidden="true"></i> 들어가기</button>
       </div>
     </section>
   </main>`);
@@ -566,14 +566,14 @@ async function renderStart(preselect) {
     <div class="count-grid" id="counts"></div>
     <p class="grid-note" id="grid-note">그림을 먼저 고르고, 조각 수를 눌러 주세요.</p>
     <div class="preview-box" id="start-pv" hidden style="max-width:680px;margin:20px auto 0"><canvas></canvas></div>
-    <div class="sticky-go"><button class="btn big" id="go" disabled>방 만들고 시작하기</button></div>`;
+    <div class="sticky-go"><button class="btn big" id="go" disabled><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 방 만들고 시작하기</button></div>`;
   const drawPics = () => {
     $$('#filter button').forEach(b => b.classList.toggle('on', b.dataset.f === filter));
     const list = pictures.filter(p => filter === 'all' || p.category === filter);
     $('#pick').innerHTML = list.map(p => `
       <button class="art-card ${pic?.id === p.id ? 'on' : ''}" data-id="${p.id}"><div class="frame"><div class="thumb" style="background-image:url('${esc(p.url)}')"></div></div>
       <div class="meta"><b>${esc(p.title)}</b>${catTag(p.category)}</div></button>`).join('') + `
-      <a class="art-card add-card" href="#/create"><div class="frame"><div class="thumb">＋</div></div><div class="meta"><b>내 사진으로 만들기</b></div></a>`;
+      <a class="art-card add-card" href="#/create"><div class="frame"><div class="thumb"><i class="fa-solid fa-plus" aria-hidden="true"></i></div></div><div class="meta"><b>내 사진으로 만들기</b></div></a>`;
     $$('#pick .art-card[data-id]').forEach(b => b.addEventListener('click', () => {
       pic = pictures.find(p => p.id === Number(b.dataset.id));
       $$('#pick .art-card').forEach(x => x.classList.toggle('on', x === b));
@@ -609,7 +609,7 @@ function renderCreate() {
     <div class="page-title"><span class="eyebrow">나만의 퍼즐</span><h2 style="margin-top:10px">내 사진으로 퍼즐 만들기</h2><p>가족사진, 여행 사진, 반려동물 사진으로 퍼즐을 만들어 친구와 함께 맞춰 보세요.</p></div>
     <div class="step-title"><span class="step-num">01</span><h3>사진 올리기</h3></div>
     <label class="drop-zone" id="drop">
-      <div class="ic">＋</div>
+      <div class="ic"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i></div>
       <h3>여기를 눌러 사진 고르기</h3>
       <div class="muted">사진 파일을 이곳으로 끌어다 놓아도 돼요</div>
       <input type="file" id="file" accept="image/*" hidden>
@@ -619,7 +619,7 @@ function renderCreate() {
         <div class="preview-box"><canvas id="pv"></canvas></div>
         <div class="stack">
           <div class="field"><label for="c-title">퍼즐 이름</label><input class="input" id="c-title" maxlength="30" value="나의 퍼즐"></div>
-          <button class="btn line" id="re-pick">다른 사진 고르기</button>
+          <button class="btn line" id="re-pick"><i class="fa-solid fa-images" aria-hidden="true"></i> 다른 사진 고르기</button>
         </div>
       </div>
       <div class="step-title"><span class="step-num">02</span><h3>조각 수 고르기</h3></div>
@@ -690,11 +690,11 @@ function renderFriends() {
           <h3>친구 추가하기</h3>
           <p class="muted">친구의 <b>이메일</b>이나 <b>친구 코드</b>(8글자)를 적어 주세요.</p>
           <input class="input" id="fr-q" placeholder="예) friend@naver.com 또는 AB12CD34" aria-label="친구 이메일 또는 친구 코드">
-          <button class="btn big wide" id="fr-add">친구 신청 보내기</button>
+          <button class="btn big wide" id="fr-add"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 신청 보내기</button>
         </div>
         <div class="card stack">
           <h3>내 친구 코드</h3>
-          <div class="code-box"><span class="code-big" id="fr-code"></span><button class="btn light small" id="fr-copy">복사</button></div>
+          <div class="code-box"><span class="code-big" id="fr-code"></span><button class="btn light small" id="fr-copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> 복사</button></div>
           <p class="muted">친구에게 이 코드를 알려 주면 나를 찾을 수 있어요.</p>
         </div>
       </div>
@@ -720,9 +720,9 @@ function renderFriends() {
     let h = '';
     if (social.requests.length) h += `<div class="card"><h3 style="margin-bottom:12px">받은 친구 신청</h3>${noteCards('requests')}</div>`;
     h += `<div class="card"><h3 style="margin-bottom:6px">내 친구 ${social.friends.length}명</h3>
-      ${social.friends.length ? social.friends.map(f => personRow(f, `<button class="btn danger" data-act="friend-remove" data-id="${f.id}">빼기</button>`)).join('') : '<p class="muted" style="padding:10px 0">아직 친구가 없어요. 왼쪽에서 친구를 추가해 보세요.</p>'}</div>`;
-    if (social.sent.length) h += `<div class="card"><h3 style="margin-bottom:6px">수락을 기다리는 신청</h3>${social.sent.map(s => personRow(s.to, `<button class="btn line" data-act="req-cancel" data-id="${s.id}">신청 취소</button>`, '수락을 기다리는 중')).join('')}</div>`;
-    if (social.recent.length) h += `<div class="card"><h3 style="margin-bottom:6px">같이 퍼즐을 맞췄던 사람</h3>${social.recent.map(p => personRow(p, social.sent.some(s => s.to.id === p.id) ? '<span class="muted">신청함</span>' : `<button class="btn teal" data-act="friend-add" data-id="${p.id}">친구 신청</button>`)).join('')}</div>`;
+      ${social.friends.length ? social.friends.map(f => personRow(f, `<button class="btn danger" data-act="friend-remove" data-id="${f.id}"><i class="fa-solid fa-user-minus" aria-hidden="true"></i> 빼기</button>`)).join('') : '<p class="muted" style="padding:10px 0">아직 친구가 없어요. 왼쪽에서 친구를 추가해 보세요.</p>'}</div>`;
+    if (social.sent.length) h += `<div class="card"><h3 style="margin-bottom:6px">수락을 기다리는 신청</h3>${social.sent.map(s => personRow(s.to, `<button class="btn line" data-act="req-cancel" data-id="${s.id}"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 신청 취소</button>`, '수락을 기다리는 중')).join('')}</div>`;
+    if (social.recent.length) h += `<div class="card"><h3 style="margin-bottom:6px">같이 퍼즐을 맞췄던 사람</h3>${social.recent.map(p => personRow(p, social.sent.some(s => s.to.id === p.id) ? '<span class="muted">신청함</span>' : `<button class="btn teal" data-act="friend-add" data-id="${p.id}"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 신청</button>`)).join('')}</div>`;
     $('#fr-lists').innerHTML = h;
   };
   socialListeners.add(draw);
@@ -747,8 +747,8 @@ function savedCard(g) {
         <p class="muted" style="font-size:17px">${new Date(g.savedAt).toLocaleString('ko-KR', { dateStyle: 'long', timeStyle: 'short' })} 저장
           ${g.people.length > 1 ? ` · 함께: ${g.people.map(esc).join(', ')}` : ''}</p>
         <div class="row" style="margin-top:12px">
-          <a class="btn" href="#/room/${esc(g.code)}">▶ 이어서 하기</a>
-          <button class="btn danger" data-unsave="${esc(g.code)}">목록에서 지우기</button>
+          <a class="btn" href="#/room/${esc(g.code)}"><i class="fa-solid fa-play" aria-hidden="true"></i> 이어서 하기</a>
+          <button class="btn danger" data-unsave="${esc(g.code)}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> 목록에서 지우기</button>
         </div>
       </div>
     </div>`;

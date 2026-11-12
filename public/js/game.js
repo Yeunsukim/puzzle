@@ -8,9 +8,9 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   <div class="game">
     <aside class="side">
       <div class="side-top">
-        <button class="menu-btn" id="g-menu-open" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
-        <button class="btn light home-btn" id="g-exit">나가기</button>
-        <button class="btn light fold-btn" id="g-fold" aria-label="정보판 접기">◀ 접기</button>
+        <button class="menu-btn" id="g-menu-open" aria-label="메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><small>메뉴</small></button>
+        <button class="btn light home-btn" id="g-exit"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 나가기</button>
+        <button class="btn light fold-btn" id="g-fold" aria-label="정보판 접기"><i class="fa-solid fa-angles-left" aria-hidden="true"></i> 접기</button>
       </div>
       <div class="info-block"><div class="info-label">퍼즐</div><div class="info-val" id="g-title">...</div></div>
       <div class="info-block hide-sm"><div class="info-label">조각</div><div class="info-val" id="g-count">-</div></div>
@@ -22,38 +22,38 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <div class="info-label hide-sm">함께하는 친구 (<span id="g-pn">0</span>/6)</div>
       <ul class="players" id="g-players"></ul>
       <div class="voice-box">
-        <button class="btn voice-btn" id="v-toggle">🎤 음성 대화 켜기</button>
-        <button class="btn light" id="v-mute" hidden>🔇 내 마이크 잠깐 끄기</button>
+        <button class="btn voice-btn" id="v-toggle"><i class="fa-solid fa-microphone" aria-hidden="true"></i> 음성 대화 켜기</button>
+        <button class="btn light" id="v-mute" hidden><i class="fa-solid fa-microphone-slash" aria-hidden="true"></i> 내 마이크 잠깐 끄기</button>
         <p class="voice-note" id="v-note">마이크는 꺼져 있어요.</p>
       </div>
-      <button class="btn teal" id="g-invite">＋ 친구 초대하기</button>
+      <button class="btn teal" id="g-invite"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 초대하기</button>
     </aside>
     <main class="stage" id="stage">
       <canvas id="board" aria-label="퍼즐판"></canvas>
       <div class="side-mini" id="g-unfold-box">
-        <button class="menu-btn" id="g-menu-open2" aria-label="메뉴 열기"><i></i><i></i><i></i><small>메뉴</small></button>
-        <button class="btn light" id="g-exit2">나가기</button>
-        <button class="btn light" id="g-unfold" aria-label="정보판 펼치기">▶ 정보판</button>
-        <button class="btn light mic-mini" id="v-toggle2" aria-label="음성 대화 켜기">🎤 켜기</button>
+        <button class="menu-btn" id="g-menu-open2" aria-label="메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><small>메뉴</small></button>
+        <button class="btn light" id="g-exit2"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 나가기</button>
+        <button class="btn light" id="g-unfold" aria-label="정보판 펼치기"><i class="fa-solid fa-angles-right" aria-hidden="true"></i> 정보판</button>
+        <button class="btn light mic-mini" id="v-toggle2" aria-label="음성 대화 켜기"><i class="fa-solid fa-microphone" aria-hidden="true"></i> 켜기</button>
         <span class="mini-stat" id="g-mini-stat"></span>
       </div>
       <div class="zoom">
-        <button class="zbtn" id="z-in" aria-label="크게 보기">＋<small>크게</small></button>
-        <button class="zbtn" id="z-out" aria-label="작게 보기">－<small>작게</small></button>
-        <button class="zbtn" id="z-fit" aria-label="전체 보기">⤢<small>전체</small></button>
-        <button class="zbtn" id="z-hint" aria-label="밑그림 보기">👁<small>밑그림</small></button>
+        <button class="zbtn" id="z-in" aria-label="크게 보기"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i><small>크게</small></button>
+        <button class="zbtn" id="z-out" aria-label="작게 보기"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i><small>작게</small></button>
+        <button class="zbtn" id="z-fit" aria-label="전체 보기"><i class="fa-solid fa-expand" aria-hidden="true"></i><small>전체</small></button>
+        <button class="zbtn" id="z-hint" aria-label="밑그림 보기"><i class="fa-solid fa-eye" aria-hidden="true"></i><small>밑그림</small></button>
       </div>
       <button class="mini" id="g-mini" aria-label="완성 그림 크게 보기"><img id="g-mini-img" alt=""><span>완성 그림</span></button>
       <div class="hint-help" id="g-help">조각을 <b>누른 채 끌어서</b> 틀에 놓아요.<br>조각을 <b>한 번 누르면</b> 왼쪽·오른쪽 돌리기 메뉴가 나와요.</div>
       <div class="piece-menu" id="g-menu" hidden>
         <div class="rot-row">
-          <button class="btn" id="m-rot-l" aria-label="왼쪽으로 돌리기"><span class="big-ic">↺</span>왼쪽으로</button>
-          <button class="btn" id="m-rot-r" aria-label="오른쪽으로 돌리기"><span class="big-ic">↻</span>오른쪽으로</button>
+          <button class="btn" id="m-rot-l" aria-label="왼쪽으로 돌리기"><span class="big-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span>왼쪽으로</button>
+          <button class="btn" id="m-rot-r" aria-label="오른쪽으로 돌리기"><span class="big-ic"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></span>오른쪽으로</button>
         </div>
-        <button class="btn light" id="m-move">☝ 누른 곳으로 옮기기</button>
-        <button class="btn light" id="m-out">⇱ 밖으로 빼기</button>
-        <button class="btn light" id="m-unsel">○ 선택 해제</button>
-        <button class="btn light" id="m-close">✕ 닫기</button>
+        <button class="btn light" id="m-move"><i class="fa-solid fa-hand-pointer" aria-hidden="true"></i> 누른 곳으로 옮기기</button>
+        <button class="btn light" id="m-out"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> 밖으로 빼기</button>
+        <button class="btn light" id="m-unsel"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i> 선택 해제</button>
+        <button class="btn light" id="m-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 닫기</button>
       </div>
       <div class="loading" id="g-loading"><div><img src="/assets/logo.svg" alt=""><h3 id="g-loading-msg">퍼즐 방에 들어가는 중...</h3></div></div>
     </main>
@@ -91,8 +91,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <h2 style="margin-top:10px">퍼즐에서 나갈까요?</h2>
       <p class="muted" style="margin-bottom:22px">저장하면 <b>왼쪽 위 메뉴 → 하던 퍼즐</b>이나 홈 화면에서 이어서 맞출 수 있어요. 지금까지 맞춘 조각은 그대로 남아요.</p>
       <div class="stack">
-        <button class="btn big wide" id="lv-save">저장하고 나가기</button>
-        <button class="btn danger wide" id="lv-drop">저장하지 않고 나가기</button>
+        <button class="btn big wide" id="lv-save"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> 저장하고 나가기</button>
+        <button class="btn danger wide" id="lv-drop"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 저장하지 않고 나가기</button>
         <button class="btn light wide" data-close>계속 맞추기</button>
       </div>`);
     const leave = async keep => {
@@ -192,11 +192,11 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   function updateVoiceUI() {
     const others = state.voicePeers.filter(p => p.uid !== me.id);
     const othersCount = new Set(others.map(p => p.uid)).size;
-    $('#v-toggle').textContent = voice.on ? '🎤 음성 대화 끄기' : '🎤 음성 대화 켜기';
+    $('#v-toggle').innerHTML = voice.on ? '<i class="fa-solid fa-microphone" aria-hidden="true"></i> 음성 대화 끄기' : '<i class="fa-solid fa-microphone" aria-hidden="true"></i> 음성 대화 켜기';
     $('#v-toggle').classList.toggle('on', voice.on);
     $('#v-mute').hidden = !voice.on;
-    $('#v-mute').textContent = voice.muted ? '🎙 내 마이크 다시 켜기' : '🔇 내 마이크 잠깐 끄기';
-    $('#v-toggle2').textContent = voice.on ? (voice.muted ? '🔇 꺼짐' : '🎤 대화 중') : '🎤 켜기';
+    $('#v-mute').innerHTML = voice.muted ? '<i class="fa-solid fa-microphone" aria-hidden="true"></i> 내 마이크 다시 켜기' : '<i class="fa-solid fa-microphone-slash" aria-hidden="true"></i> 내 마이크 잠깐 끄기';
+    $('#v-toggle2').innerHTML = voice.on ? (voice.muted ? '<i class="fa-solid fa-microphone-slash" aria-hidden="true"></i> 꺼짐' : '<i class="fa-solid fa-microphone" aria-hidden="true"></i> 대화 중') : '<i class="fa-solid fa-microphone" aria-hidden="true"></i> 켜기';
     $('#v-toggle2').classList.toggle('on', voice.on);
     $('#v-note').textContent = voice.on
       ? (voice.muted ? '내 마이크를 잠깐 껐어요. 친구 목소리는 계속 들려요.'
@@ -277,8 +277,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       return `
       <li class="${onIds.has(p.uid) ? '' : 'off'} ${talking(p.uid) ? 'speaking' : ''}" style="border-color:${p.color}">
         <img src="${avatarUrl(p.avatar)}" alt="" style="background:${p.color}33">
-        <span class="nm">${esc(p.nick)}${mine ? ' (나)' : ''}${inVoice.has(p.uid) ? ' <span class="v-ic" title="음성 대화 중">🎧</span>' : ''}</span>
-        ${!mine && voice.on && inVoice.has(p.uid) ? `<button class="silence-btn" data-silence="${p.uid}" aria-label="${esc(p.nick)}님 소리 ${silenced ? '켜기' : '끄기'}">${silenced ? '🔇' : '🔈'}</button>` : ''}
+        <span class="nm">${esc(p.nick)}${mine ? ' (나)' : ''}${inVoice.has(p.uid) ? ' <span class="v-ic" title="음성 대화 중"><i class="fa-solid fa-headphones" aria-hidden="true"></i></span>' : ''}</span>
+        ${!mine && voice.on && inVoice.has(p.uid) ? `<button class="silence-btn" data-silence="${p.uid}" aria-label="${esc(p.nick)}님 소리 ${silenced ? '켜기' : '끄기'}">${silenced ? '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>' : '<i class="fa-solid fa-volume-high" aria-hidden="true"></i>'}</button>` : ''}
         <span class="sc">${scores[p.uid] || 0}개</span>
       </li>`;
     }).join('');
@@ -381,7 +381,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <p class="muted" style="margin-bottom:12px">이 링크를 문자나 카카오톡으로 보내 주세요. 가입하고 바로 들어올 수 있어요.</p>
       <div class="link-box">${esc(link)}</div>
       <div class="spacer" style="height:12px"></div>
-      <button class="btn line wide" id="inv-copy">링크 복사하기</button>
+      <button class="btn line wide" id="inv-copy"><i class="fa-solid fa-link" aria-hidden="true"></i> 링크 복사하기</button>
       <p class="center muted" style="margin-top:18px">방 번호</p>
       <div class="room-code">${code}</div>
       ${lanOnly ? `<div class="spacer"></div><div class="note">지금은 이 컴퓨터에서 서버를 켜 둔 상태라, 링크로는 <b>같은 와이파이</b>에 있는 사람만 들어올 수 있어요. 멀리 있는 친구도 들어오게 하려면 사이트를 인터넷에 열어야 해요.</div>` : ''}
@@ -396,8 +396,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         <div class="person"><div class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></div>
           <div class="nm">${esc(f.nick)}<small>${here.has(f.id) ? '이 방에 있어요' : f.online ? '지금 접속 중' : '쉬는 중 · 다음에 들어오면 알림이 보여요'}</small></div>
           ${here.has(f.id) ? '<span class="muted">함께하는 중</span>'
-            : sentTo.has(f.id) ? `<button class="btn line" data-inv="${f.id}">다시 보내기</button>`
-            : `<button class="btn" data-inv="${f.id}">초대 보내기</button>`}
+            : sentTo.has(f.id) ? `<button class="btn line" data-inv="${f.id}"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> 다시 보내기</button>`
+            : `<button class="btn" data-inv="${f.id}"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> 초대 보내기</button>`}
         </div>`).join('')
         : '<p class="muted" style="padding:14px 0">아직 친구가 없어요. 왼쪽 위 메뉴 → 친구에서 친구를 추가하거나, 아래 링크를 보내 주세요.</p>';
       $$('[data-inv]', el).forEach(b => b.addEventListener('click', async () => {
@@ -438,8 +438,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
           <span class="nm">${i === 0 && p.placed > 0 ? '👑 ' : ''}${esc(p.nick)}${p.uid === me.id ? ' (나)' : ''}</span><span class="sc">${p.placed}개</span></li>`).join('')}
       </ul>
       <div class="stack">
-        <a class="btn big wide" href="#/records">내 기록 보기</a>
-        <a class="btn teal wide" href="#/start">다른 퍼즐 하기</a>
+        <a class="btn big wide" href="#/records"><i class="fa-solid fa-trophy" aria-hidden="true"></i> 내 기록 보기</a>
+        <a class="btn teal wide" href="#/start"><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 다른 퍼즐 하기</a>
         <button class="btn light wide" data-close>완성된 그림 구경하기</button>
       </div>`);
   }
