@@ -725,3 +725,10 @@ button, input, select { font: inherit; color: inherit; }
 .exhibit-toggle.small .sw { width: 44px; height: 26px; }
 .exhibit-toggle.small .sw::after { width: 18px; height: 18px; }
 .exhibit-toggle.small.on .sw::after { left: 22px; }
+/* 내 기록: 크게 보기 · 그림 저장하기 · 랭킹 스위치를 같은 높이·같은 글씨로 */
+.rec .row { align-items: stretch; }
+.rec .row .btn, .rec .row .exhibit-toggle { height: 56px; min-height: 56px; font-size: 19px; padding: 0 22px; box-sizing: border-box; }
+.rec .row .exhibit-toggle { padding: 0 20px 0 12px; border-width: 2px; }
+.rec .row .exhibit-toggle .sw { width: 52px; height: 30px; }
+.rec .row .exhibit-toggle .sw::after { width: 22px; height: 22px; }
+.rec .row .exhibit-toggle.on .sw::after { left: 26px; }
