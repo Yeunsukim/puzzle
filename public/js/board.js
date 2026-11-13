@@ -153,6 +153,14 @@ export class Board {
     this.need = true;
   }
 
+  // 연결이 끊기거나 다시 붙을 때: 끄는 중·누르는 중 상태를 모두 정리한다
+  resetInput() {
+    this.drag = null; this.ptr = null; this.pinch = null; this.moveMode = -1;
+    this.touches.clear();
+    this.c.style.cursor = 'default';
+    this.need = true;
+  }
+
   cancelDrag(id, s) {
     if (this.drag && this.drag.id === id) this.drag = null;
     if (s) this.update(s);
@@ -478,6 +486,56 @@ export class Board {
     if (anim || this.need) { this.draw(); this.need = false; }
   }
 
+  // 틀 그림(그림자 + 바탕 + 작게 볼 때의 칸 선)을 배율에 맞춰 만들어 두기
+  frameLayer(scale, withGrid) {
+    const th = this.theme, S = this.S, W = this.W, H = this.H;
+    // 배율을 1.25배 단위로 끊어서, 확대·축소 때마다 새로 만들지 않게
+    let k = Math.pow(1.25, Math.round(Math.log(scale) / Math.log(1.25)));
+    const margin = S * 0.6;
+    k = Math.min(k, 4096 / (W + margin * 2), 4096 / (H + margin * 2));
+    const key = [k.toFixed(4), withGrid, th.frame, th.cell, th.grid].join('|');
+    if (this._layer?.key === key) return this._layer;
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.round((W + margin * 2) * k));
+    cv.height = Math.max(1, Math.round((H + margin * 2) * k));
+    const c = cv.getContext('2d');
+    c.setTransform(k, 0, 0, k, margin * k, margin * k);
+    const fp = S * 0.14;
+    c.save();
+    c.shadowColor = 'rgba(18,50,75,.25)';
+    c.shadowBlur = Math.min(40 * k, 60);
+    c.shadowOffsetY = 10 * k;
+    c.fillStyle = th.frame;
+    c.beginPath(); c.roundRect(-fp, -fp, W + fp * 2, H + fp * 2, S * 0.06); c.fill();
+    c.restore();
+    c.fillStyle = th.cell;
+    c.fillRect(0, 0, W, H);
+    if (withGrid) {
+      c.save();
+      c.beginPath(); c.rect(0, 0, W, H); c.clip();
+      c.strokeStyle = th.grid;
+      c.lineJoin = 'round';
+      c.lineWidth = Math.max(1.2 / k, S * 0.016);
+      c.stroke(this.gridPath);
+      c.restore();
+    }
+    this._layer = { key, cv, margin };
+    return this._layer;
+  }
+
+  // 작게 볼 때 쓰는 작은 조각 그림 (큰 그림을 매번 줄여 그리면 느려서)
+  smallAtlas() {
+    if (this._atlas) return this._atlas;
+    const n = 48, count = this.sprites.length, per = Math.ceil(Math.sqrt(count));
+    const cv = document.createElement('canvas');
+    cv.width = per * n; cv.height = Math.ceil(count / per) * n;
+    const c = cv.getContext('2d');
+    c.imageSmoothingQuality = 'high';
+    this.sprites.forEach((sp, i) => c.drawImage(sp, (i % per) * n, Math.floor(i / per) * n, n, n));
+    this._atlas = { cv, n, per };
+    return this._atlas;
+  }
+
   draw() {
     const { ctx, S, W, H, cam, dpr } = this;
     const z = cam.z;
@@ -485,26 +543,28 @@ export class Board {
     ctx.clearRect(0, 0, this.c.width, this.c.height);
     ctx.setTransform(dpr * z, 0, 0, dpr * z, -cam.x * z * dpr, -cam.y * z * dpr);
 
-    // 퍼즐 틀
-    const fp = S * 0.14;
-    ctx.save();
-    ctx.shadowColor = 'rgba(18,50,75,.25)';
-    ctx.shadowBlur = 40;
-    ctx.shadowOffsetY = 10;
+    // 퍼즐 틀 (그림자·바탕·칸 선) — 미리 그려 둔 그림 한 장을 쓴다
     const th = this.theme;
-    ctx.fillStyle = th.frame;
-    ctx.beginPath(); ctx.roundRect(-fp, -fp, W + fp * 2, H + fp * 2, S * 0.06); ctx.fill();
-    ctx.restore();
-    ctx.fillStyle = th.cell;
-    ctx.fillRect(0, 0, W, H);
+    const cellPx = S * z * dpr;
+    const layer = this.frameLayer(z * dpr, cellPx < 36);
+    const m = layer.margin;
+    ctx.drawImage(layer.cv, -m, -m, W + m * 2, H + m * 2);
     if (this.hint) { ctx.globalAlpha = 0.3; ctx.drawImage(this.big, 0, 0, W, H); ctx.globalAlpha = 1; }
-    ctx.save();
-    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip(); // 틀 바깥으로 삐져나온 꼭지 선은 감춘다
-    ctx.strokeStyle = th.grid;
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = Math.max(1.2 / z, S * 0.016);
-    ctx.stroke(this.gridPath);
-    ctx.restore();
+    if (cellPx >= 36) {
+      // 크게 볼 때: 화면에 보이는 칸의 조각 모양 선만 그린다 (또렷하게)
+      const c0 = Math.max(0, Math.floor(cam.x / S) - 1), c1 = Math.min(this.cols - 1, Math.floor((cam.x + this.vw / z) / S) + 1);
+      const r0 = Math.max(0, Math.floor(cam.y / S) - 1), r1 = Math.min(this.rows - 1, Math.floor((cam.y + this.vh / z) / S) + 1);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip(); // 틀 바깥으로 삐져나온 꼭지 선은 감춘다
+      ctx.strokeStyle = th.grid;
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(1.2 / z, S * 0.016);
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        ctx.setTransform(dpr * z, 0, 0, dpr * z, (c * S - cam.x) * z * dpr, (r * S - cam.y) * z * dpr);
+        ctx.stroke(this.paths[r * this.cols + c]);
+      }
+      ctx.restore();
+    }
     ctx.strokeStyle = th.edge;
     ctx.lineWidth = Math.max(2 / z, S * 0.02);
     ctx.strokeRect(0, 0, W, H);
@@ -592,7 +652,11 @@ export class Board {
       ctx.shadowOffsetY = 8;
       ctx.scale(1.04, 1.04);
     }
-    ctx.drawImage(this.sprites[p.id], -half - pw, -half - pw, S + pw * 2, S + pw * 2);
+    const tiny = (S + pw * 2) * this.cam.z * this.dpr < 44 && !picked && !dragging;
+    if (tiny) {
+      const a = this.smallAtlas();
+      ctx.drawImage(a.cv, (p.id % a.per) * a.n, Math.floor(p.id / a.per) * a.n, a.n, a.n, -half - pw, -half - pw, S + pw * 2, S + pw * 2);
+    } else ctx.drawImage(this.sprites[p.id], -half - pw, -half - pw, S + pw * 2, S + pw * 2);
     if (picked) {
       // 흰 실선 테두리 (밝은 바탕에서도 보이게 바깥에 얇은 어두운 선을 한 번 더)
       ctx.shadowColor = 'transparent';

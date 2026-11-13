@@ -165,6 +165,9 @@ app.get('/api/records', requireUser, ah(async (req, res) => {
   }) });
 }));
 
+// 인터넷 서버가 게임 중에 잠들지 않도록 깨어 있음 확인용
+app.get('/api/ping', (_req, res) => res.json({ ok: true, t: Date.now() }));
+
 app.use('/api', (_req, res) => res.status(404).json({ error: '없는 주소예요.' }));
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' })); // 예전에 내 컴퓨터에 저장한 사진
 app.get('/uploads/:name', ah(async (req, res) => {
@@ -209,6 +212,10 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(googleClientId ? '  ✔ 구글 로그인: 켜짐' : '  · 구글 로그인: 꺼짐 (GOOGLE_CLIENT_ID 를 넣으면 켜져요)');
   console.log('');
 });
+
+// 예상 못 한 오류가 나도 서버가 꺼지지 않게 기록만 남긴다 (방에 있는 모두가 끊기지 않도록)
+process.on('unhandledRejection', err => console.error('처리 못 한 오류:', err?.stack || err));
+process.on('uncaughtException', err => console.error('예상 못 한 오류:', err?.stack || err));
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => { await saveAll().catch(() => {}); process.exit(0); });

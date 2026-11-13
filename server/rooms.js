@@ -343,7 +343,12 @@ export function attachSockets(io) {
 
     socket.on('drop', data => {
       const id = data?.id;
-      if (!validId(id) || room.held.get(id) !== uid) return;
+      if (!validId(id)) return;
+      if (room.held.get(id) !== uid) {
+        // 내가 잡은 조각이 아니면(연결이 잠깐 끊겼던 경우 등) 그 사람 화면을 서버 기준 자리로 되돌린다
+        socket.emit('pieces', { list: [pub(room, room.state.pieces[id])], locked: [], by: 0, scores: room.state.scores, done: room.lockedCount });
+        return;
+      }
       room.held.delete(id);
       const p = room.state.pieces[id];
       const { changed, locked } = dropPiece(room, uid, p, Number(data.x), Number(data.y));

@@ -136,6 +136,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       if (!joinedOnce) { joinedOnce = true; await init(res.snapshot); }
       else { // 다시 연결됨: 최신 상태로 맞춘다
         state.snap = res.snapshot;
+        state.board?.resetInput();
+        state.board?.setSelected(-1);
         state.board?.setPieces(res.snapshot.pieces);
         setPlayers(res.snapshot.players);
         updateProgress();
@@ -143,7 +145,14 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       }
     });
   });
-  socket.on('disconnect', reason => { if (!state.closed && reason !== 'io client disconnect') toast('연결이 잠깐 끊겼어요. 다시 연결하는 중...'); });
+  socket.on('disconnect', reason => {
+    if (state.closed || reason === 'io client disconnect') return;
+    state.board?.resetInput(); // 끄던 조각은 서버에 다시 붙으면 제자리로 맞춰진다
+    hideMenu();
+    toast('연결이 잠깐 끊겼어요. 다시 연결하는 중...', 4000);
+  });
+  // 인터넷 서버(Render 무료)는 한동안 요청이 없으면 잠들 수 있어서, 게임 중에는 4분마다 깨워 둔다
+  const keepAwake = setInterval(() => { if (!document.hidden) fetch('/api/ping').catch(() => {}); }, 4 * 60e3);
 
   socket.on('grab', ({ id, uid }) => {
     state.board?.remoteGrab(id, uid);
@@ -506,6 +515,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   // 정리 (다른 화면으로 갈 때)
   return () => {
     state.closed = true;
+    clearInterval(keepAwake);
     setLeaveGuard(null);
     setInviteHandler?.(null);
     voice.stop();
