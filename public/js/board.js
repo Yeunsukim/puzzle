@@ -2,6 +2,7 @@
 import { buildPieces } from './jigsaw.js';
 
 const DRAG_START = 12; // 이만큼(화면 점) 움직여야 '끌기'로 본다. 손이 조금 떨려도 '누르기'로 알아보도록 넉넉하게.
+const PICK_SCALE = 1.3; // 고른 조각을 틀 밖에서 얼마나 크게 보여 줄지
 const SMALL_DRAG = 24; // 이보다 적게 끌었다 놓으면 '실수로 조금 움직인 것'으로 보고 선택을 지우지 않는다
 
 export class Board {
@@ -227,10 +228,10 @@ export class Board {
 
   pieceAt(wx, wy) {
     const S = this.S, half = S / 2;
-    // 고른 조각은 1.5배로 크게 그려져 있으니 그 크기대로 먼저 확인
+    // 고른 조각은 1.3배로 크게 그려져 있으니 그 크기대로 먼저 확인
     const sel = this.pieces[this.selected];
     if (sel && !sel.locked) {
-      const sk = this.selBig ? 1.5 : 1;
+      const sk = this.selBig ? PICK_SCALE : 1;
       const dx = (wx - (sel.x + half)) / sk, dy = (wy - (sel.y + half)) / sk;
       const a = -sel.rot * Math.PI / 2;
       const lx = dx * Math.cos(a) - dy * Math.sin(a) + half;
@@ -348,7 +349,7 @@ export class Board {
     }
     if (!this.ptr.moved) return;
     if (this.drag) {
-      // 고른 조각을 끄는 중: 마우스가 틀 밖이면 1.5배, 틀 안이면 원래 크기
+      // 고른 조각을 끄는 중: 마우스가 틀 밖이면 1.3배, 틀 안이면 원래 크기
       if (this.drag.id === this.selected) this.selBig = !this.inFrameAt(w.x, w.y);
       this.dragTo(w);
     }
@@ -423,8 +424,8 @@ export class Board {
 
   setMoveMode(id) { this.moveMode = id; this.need = true; }
 
-  // 고른 조각: 1.5배 크게 + 흰 테두리로 보여 준다 (-1 이면 선택 해제)
-  // 크기는 마우스로 누른 곳 기준: 틀 밖이면 1.5배, 틀 안이면 원래 크기
+  // 고른 조각: 1.3배 크게 + 흰 테두리로 보여 준다 (-1 이면 선택 해제)
+  // 크기는 마우스로 누른 곳 기준: 틀 밖이면 1.3배, 틀 안이면 원래 크기
   setSelected(id) {
     if (this.selected !== id) this.o.onSelect?.(id);
     this.selected = id;
@@ -558,9 +559,9 @@ export class Board {
     const otherUid = p.locked ? null : (p.held && p.held !== this.me ? p.held : this.remotePicker(p.id));
     const other = otherUid ? this.o.playerInfo(otherUid) : null;
     const picked = p.id === this.selected && !p.locked;
-    // 틀 밖에서는 1.5배로 크게, 틀 안으로 들어오면 흰 테두리만 남기고 원래 크기
+    // 틀 밖에서는 1.3배로 크게, 틀 안으로 들어오면 흰 테두리만 남기고 원래 크기
     const big = picked && this.selBig;
-    const k = big ? 1.5 : 1;
+    const k = big ? PICK_SCALE : 1;
     ctx.save();
     ctx.translate(p.rx + half, p.ry + half);
     if (p.ang % 360) ctx.rotate(p.ang * Math.PI / 180);

@@ -316,7 +316,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   function showMenu(id, pt) {
     const menu = $('#g-menu'), stage = $('#stage').getBoundingClientRect();
     state.menuFor = id;
-    state.board?.setSelected(id); // 고른 조각: 흰 테두리 + 1.5배
+    state.board?.setSelected(id); // 고른 조각: 흰 테두리 + 1.3배
     menu.hidden = false;
     // 팝업이 막 뜬 0.6초 동안은 팝업 단추가 눌리지 않게 한다.
     // (두 번 누를 때 두 번째 누르기가 팝업 단추에 잘못 눌리지 않고 아래 조각으로 가도록)
@@ -324,7 +324,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     clearTimeout(state.menuArm);
     state.menuArm = setTimeout(() => { menu.style.pointerEvents = ''; }, 600);
     const mw = menu.offsetWidth, mh = menu.offsetHeight;
-    // 메뉴가 크게(1.5배, 꼭지 포함) 보이는 조각과 마우스를 가리지 않도록 충분히 떨어뜨린다
+    // 메뉴가 크게(1.3배, 꼭지 포함) 보이는 조각과 마우스를 가리지 않도록 충분히 떨어뜨린다
     const b = state.board, p = b?.pieces[id];
     const c = p ? b.toScreen(p.x + b.S / 2, p.y + b.S / 2) : pt;
     const gap = 20 + (b ? b.S * b.cam.z * 1.25 : 0);
