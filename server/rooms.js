@@ -389,6 +389,13 @@ export function attachSockets(io) {
       io.to(to).emit('voice-signal', { from: socket.id, uid, data: msg.data });
     });
 
+    // 골라 둔 조각(흰 테두리)을 친구들에게 알려 준다
+    socket.on('select', id => {
+      if (!room) return;
+      const sid = Number.isInteger(id) && validId(id) ? id : -1;
+      socket.to(room.code).emit('select', { uid, id: sid });
+    });
+
     socket.on('cursor', data => {
       if (!room) return;
       const x = Number(data?.x), y = Number(data?.y);
@@ -399,6 +406,7 @@ export function attachSockets(io) {
     socket.on('disconnect', () => {
       if (!room) return;
       leaveVoice();
+      socket.to(room.code).emit('select', { uid, id: -1 });
       releaseAll();
       const o = room.online.get(uid);
       if (o) {

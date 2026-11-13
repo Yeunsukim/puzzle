@@ -33,6 +33,7 @@ export class Board {
     this.pinch = null;         // 두 손가락으로 벌려 확대하는 중
     this.moveMode = -1;        // '놓을 곳 누르기'로 옮길 조각
     this.selected = -1;        // 지금 고른 조각
+    this.remoteSel = new Map(); // 친구 uid -> 친구가 골라 둔 조각
     this.need = true;
     this.lastMoveSent = 0; this.lastCursorSent = 0;
     this.setPieces(o.pieces);
@@ -291,11 +292,14 @@ export class Board {
       this.tapWorld = w;
       this.o.onDoubleClickPiece?.(p.id);
       this.shake(p.id);
-    } else if (free && this.selected !== p.id) {
-      // 조각을 누르는 순간 바로 흰 테두리 + 크기 (누르고 있는 동안 어떤 조각인지 보이게)
-      this.tapWorld = w;
-      this.setSelected(p.id);
-      this.o.onPressPiece?.(p.id);
+    } else if (free) {
+      // 조각을 잡는 순간: 흔들어서 '잡았다'를 알려 주고, 바로 흰 테두리 + 크기
+      if (this.selected !== p.id) {
+        this.tapWorld = w;
+        this.setSelected(p.id);
+        this.o.onPressPiece?.(p.id);
+      }
+      this.shake(p.id);
     }
     this.debug?.(`누름 조각=${free ? p.id : '없음'} 두번째=${!!this.ptr.dbl} 선택=${this.selected} 종류=${e.pointerType}`);
   }
@@ -381,7 +385,7 @@ export class Board {
         // 아주 조금만 움직였다 놓음: 끌기가 아니라 '누르기'로 본다 (손이 흔들려도 되게)
         this.tapWorld = this.toWorld(e.clientX, e.clientY);
         if (!ptr.dbl) this.tap(p.id, e);
-      } else if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
+      } else if (this.selected === p.id) this.setSelected(-1); // 내려놓으면 흰 테두리를 지운다
     } else if (!ptr.moved && !cancelled) {
       this.debug?.(`뗌(누르기) 조각=${ptr.piece} 두번째=${!!ptr.dbl}`);
       this.tapWorld = this.toWorld(e.clientX, e.clientY); // 누른 곳 (틀 안팎 판단용)
@@ -413,11 +417,16 @@ export class Board {
   // '잡았다' 표시: 조각을 잠깐 좌우로 흔든다
   shake(id) { this.wiggle = { id, t0: performance.now() }; this.need = true; }
 
+  setRemoteSelect(uid, id) { if (id >= 0) this.remoteSel.set(uid, id); else this.remoteSel.delete(uid); this.need = true; }
+  // 이 조각을 골라 둔 친구 (없으면 null)
+  remotePicker(id) { for (const [uid, sid] of this.remoteSel) if (sid === id && uid !== this.me) return uid; return null; }
+
   setMoveMode(id) { this.moveMode = id; this.need = true; }
 
   // 고른 조각: 1.5배 크게 + 흰 테두리로 보여 준다 (-1 이면 선택 해제)
   // 크기는 마우스로 누른 곳 기준: 틀 밖이면 1.5배, 틀 안이면 원래 크기
   setSelected(id) {
+    if (this.selected !== id) this.o.onSelect?.(id);
     this.selected = id;
     if (id >= 0) {
       this.toTop(id);
@@ -546,7 +555,8 @@ export class Board {
     const { ctx, S } = this;
     const half = S / 2, pw = this.padW;
     const dragging = this.drag && this.drag.id === p.id;
-    const other = !p.locked && p.held && p.held !== this.me ? this.o.playerInfo(p.held) : null;
+    const otherUid = p.locked ? null : (p.held && p.held !== this.me ? p.held : this.remotePicker(p.id));
+    const other = otherUid ? this.o.playerInfo(otherUid) : null;
     const picked = p.id === this.selected && !p.locked;
     // 틀 밖에서는 1.5배로 크게, 틀 안으로 들어오면 흰 테두리만 남기고 원래 크기
     const big = picked && this.selBig;

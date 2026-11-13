@@ -211,7 +211,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     if (b) voice.toggleSilence(Number(b.dataset.silence));
   });
   socket.on('cursor', ({ uid, x, y }) => state.board?.setCursor(uid, x, y));
-  socket.on('cursor-off', ({ uid }) => state.board?.removeCursor(uid));
+  socket.on('cursor-off', ({ uid }) => { state.board?.removeCursor(uid); state.board?.setRemoteSelect(uid, -1); });
+  socket.on('select', ({ uid, id }) => state.board?.setRemoteSelect(uid, id));
   socket.on('done', summary => { state.snap.finishedAt = summary.finishedAt; updateTime(); showDone(summary); });
 
   // ---- 처음 준비 ----
@@ -243,6 +244,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       onClickPiece: (id, pt) => showMenu(id, pt),
       onDoubleClickPiece: id => { closeMenu(); state.board.setSelected(id); },
       // 다른 조각을 누르면 열려 있던 팝업은 닫는다 (새 조각은 누르는 순간 이미 골라짐)
+      onSelect: id => socket.emit('select', id),
       onPressPiece: id => { if (state.menuFor >= 0 && state.menuFor !== id) closeMenu(); },
       onClickEmpty: () => hideMenu(),
       // '누른 곳으로 옮기기': 잡았다가 바로 그 자리에 놓는다
