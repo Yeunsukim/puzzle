@@ -285,6 +285,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <li class="${onIds.has(p.uid) ? '' : 'off'} ${talking(p.uid) ? 'speaking' : ''}" style="border-color:${p.color}">
         <img src="${avatarUrl(p.avatar)}" alt="" style="background:${p.color}33">
         <span class="nm">${esc(p.nick)}${mine ? ' (나)' : ''}${inVoice.has(p.uid) ? ' <span class="v-ic" title="음성 대화 중"><i class="fa-solid fa-headphones" aria-hidden="true"></i></span>' : ''}</span>
+        ${!mine && voice.on && inVoice.has(p.uid) ? (st => st ? `<small class="v-st ${st}">${st === 'ok' ? '연결됨' : st === 'fail' ? '연결 안 됨' : '연결 중…'}</small>` : '')(voice.stateOf(p.uid)) : ''}
         ${!mine && voice.on && inVoice.has(p.uid) ? `<button class="silence-btn" data-silence="${p.uid}" aria-label="${esc(p.nick)}님 소리 ${silenced ? '켜기' : '끄기'}">${silenced ? '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>' : '<i class="fa-solid fa-volume-high" aria-hidden="true"></i>'}</button>` : ''}
         <span class="sc">${scores[p.uid] || 0}개</span>
       </li>`;

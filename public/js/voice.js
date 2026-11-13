@@ -80,14 +80,18 @@ export class Voice {
     pc.ontrack = e => {
       const s = e.streams[0] || new MediaStream([e.track]);
       if (!entry.audio) {
-        entry.audio = new Audio();
+        entry.audio = document.createElement('audio');
         entry.audio.autoplay = true;
+        entry.audio.setAttribute('playsinline', ''); // 아이폰에서도 소리가 나오게
+        entry.audio.hidden = true;
+        document.body.appendChild(entry.audio);
         entry.audio.muted = this.silenced.has(uid);
       }
       entry.audio.srcObject = s;
       entry.audio.play().catch(() => {});
       entry.analyser = this.makeAnalyser(s);
     };
+    pc.oniceconnectionstatechange = () => this.hooks.onChange?.();
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'failed') this.hooks.onFail?.(uid);
       this.hooks.onChange?.();
@@ -129,8 +133,20 @@ export class Voice {
     if (!p) return;
     this.peers.delete(sid);
     try { p.pc.close(); } catch { /* 무시 */ }
-    if (p.audio) { p.audio.srcObject = null; }
+    if (p.audio) { p.audio.srcObject = null; p.audio.parentNode?.removeChild(p.audio); }
     if (!quiet) this.hooks.onChange?.();
+  }
+
+  // 이 친구와의 음성 연결 상태: 'ok'(연결됨) / 'wait'(연결 중) / 'fail'(안 됨) / null(연결 없음)
+  stateOf(uid) {
+    for (const p of this.peers.values()) {
+      if (p.uid !== uid) continue;
+      const s = p.pc.connectionState || p.pc.iceConnectionState;
+      if (s === 'connected' || s === 'completed') return 'ok';
+      if (s === 'failed' || s === 'disconnected' || s === 'closed') return 'fail';
+      return 'wait';
+    }
+    return null;
   }
 
   // 연결된 친구 수 (실제로 연결이 이어진 사람)

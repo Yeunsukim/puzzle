@@ -54,6 +54,9 @@ export class Board {
     canvas.addEventListener('pointermove', this.onMove);
     canvas.addEventListener('pointerup', this.onUp);
     canvas.addEventListener('pointercancel', this.onCancel);
+    // '놓기' 신호가 퍼즐판 밖(단추 위 등)에서 일어나도 놓치지 않게 화면 전체에서 받는다
+    this.onWinUp = e => { if (this.ptr && e.pointerId === this.ptr.id && e.target !== canvas) this.pointerUp(e, false); };
+    window.addEventListener('pointerup', this.onWinUp, true);
     canvas.addEventListener('wheel', this.onWheel, { passive: false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     // 윈도우가 알려 주는 '두 번 누르기'도 받는다 (사람마다 누르는 속도가 달라서)
@@ -92,6 +95,7 @@ export class Board {
   destroy() {
     this.alive = false;
     this.ro.disconnect();
+    window.removeEventListener('pointerup', this.onWinUp, true);
     window.removeEventListener('themechange', this.onTheme);
     this.debugBox?.remove();
   }
@@ -276,6 +280,12 @@ export class Board {
       this.startPinch();
       return;
     }
+    // 예전 누르기가 '놓기' 없이 남아 있으면(놓기 신호를 놓친 경우) 먼저 그 자리에 놓아 정리한다
+    if (this.ptr && e.pointerType === 'mouse' && this.ptr.id === e.pointerId) {
+      this.debug?.('놓기 신호를 놓쳐서 정리함');
+      this.pointerUp({ pointerId: this.ptr.id, clientX: this.ptr.cx, clientY: this.ptr.cy }, false);
+      this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
     if (this.ptr || this.pinch) return;
     try { this.c.setPointerCapture(e.pointerId); } catch { /* 잡기 실패해도 계속 */ }
     const touch = e.pointerType !== 'mouse';
@@ -323,6 +333,8 @@ export class Board {
   }
 
   pointerMove(e) {
+    // 마우스 단추가 이미 떼어져 있는데 끄는 중으로 남아 있으면 놓은 것으로 처리
+    if (this.ptr && e.pointerType === 'mouse' && e.pointerId === this.ptr.id && e.buttons === 0 && this.ptr.moved) { this.pointerUp(e, false); return; }
     if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pinch) { if (this.touches.size >= 2) this.movePinch(); return; }
     const now = performance.now();

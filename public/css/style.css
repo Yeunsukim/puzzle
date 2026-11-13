@@ -580,3 +580,7 @@ button, input, select { font: inherit; color: inherit; }
 .pick-row .nm small { display: block; font-weight: 400; font-size: 15px; color: var(--ink-3); }
 .more-way summary { cursor: pointer; font-weight: 700; font-size: 18px; min-height: 48px; display: flex; align-items: center; color: var(--blue-d); }
 .pick-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.v-st { font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.v-st.ok { background: #DDF3E6; color: #1C7A4B; }
+.v-st.wait { background: var(--note-bg); color: var(--ink-2); }
+.v-st.fail { background: var(--danger-bg); color: var(--danger); }
