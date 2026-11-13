@@ -1,7 +1,8 @@
 // 퍼즐판: 그리기, 조각 끌어 놓기, 화면 이동, 확대/축소
 import { buildPieces } from './jigsaw.js';
 
-const DRAG_START = 7; // 이만큼(화면 점) 움직여야 '끌기'로 본다. 그보다 적으면 '한 번 누르기'.
+const DRAG_START = 12; // 이만큼(화면 점) 움직여야 '끌기'로 본다. 손이 조금 떨려도 '누르기'로 알아보도록 넉넉하게.
+const SMALL_DRAG = 24; // 이보다 적게 끌었다 놓으면 '실수로 조금 움직인 것'으로 보고 선택을 지우지 않는다
 
 export class Board {
   constructor(canvas, o) {
@@ -345,7 +346,17 @@ export class Board {
     if (this.drag) {
       const p = this.pieces[this.drag.id];
       this.drag = null;
-      if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
+      const dist = Math.hypot(e.clientX - ptr.sx, e.clientY - ptr.sy);
+      if (dist < SMALL_DRAG) {
+        // 아주 조금만 움직였다 놓음: 누르기로 본다. 두 번째 누르기였다면 '두 번 누르기'로 처리
+        const now = performance.now(), last = this.lastTap;
+        this.lastTap = { id: p.id, t: now };
+        if (last && last.id === p.id && now - last.t < 700) {
+          this.lastTap = null;
+          this.tapWorld = this.toWorld(e.clientX, e.clientY);
+          this.o.onDoubleClickPiece?.(p.id);
+        }
+      } else if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
       this.o.onDrop(p.id, p.x, p.y);
     } else if (!ptr.moved && !cancelled) {
       this.tapWorld = this.toWorld(e.clientX, e.clientY); // 누른 곳 (틀 안팎 판단용)
