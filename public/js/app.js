@@ -263,9 +263,9 @@ function renderDrawer() {
         <button data-t="light"><i class="fa-solid fa-sun" aria-hidden="true"></i> 밝게</button><button data-t="dark"><i class="fa-solid fa-moon" aria-hidden="true"></i> 어둡게</button><button data-t="auto"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> 기기 설정</button>
       </div>
     </div>
-    <div class="drawer-sec"><h4>내 친구 코드</h4>
+    <div class="drawer-sec"><h4>내 친구맺기 코드</h4>
       <div class="code-box"><span class="code-big" style="font-size:30px">${esc(social.code)}</span><button class="btn light small" id="d-copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> 복사</button></div>
-      <p class="muted" style="font-size:17px;margin-top:6px">친구에게 이 코드를 알려 주면 나를 친구로 추가할 수 있어요.</p>
+      <p class="muted" style="font-size:17px;margin-top:6px">친구에게 이 코드를 알려 주면, 친구가 이 코드로 나에게 친구 신청을 할 수 있어요.</p>
     </div>
     <div class="drawer-foot"><button class="btn line wide" id="d-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 로그아웃</button><p class="muted center" style="font-size:15px;margin-top:12px">버전: ${VERSION}</p></div>`;
   $('#d-close', drawer).addEventListener('click', closeDrawer);
@@ -279,7 +279,7 @@ function renderDrawer() {
   markTheme();
   $$('#d-theme button', drawer).forEach(b => b.addEventListener('click', () => { setTheme(b.dataset.t); markTheme(); }));
   $$('a', drawer).forEach(a => a.addEventListener('click', () => { if (a.getAttribute('href') === location.hash) closeDrawer(); }));
-  $('#d-copy', drawer).addEventListener('click', async () => toast(await copyText(social.code) ? '친구 코드를 복사했어요.' : '복사가 안 됐어요. 코드를 직접 알려 주세요.'));
+  $('#d-copy', drawer).addEventListener('click', async () => toast(await copyText(social.code) ? '친구맺기 코드를 복사했어요.' : '복사가 안 됐어요. 코드를 직접 알려 주세요.'));
   $('#d-logout', drawer).addEventListener('click', async () => {
     await api('/api/logout', {}).catch(() => {});
     me = null;
@@ -494,7 +494,7 @@ async function renderHome() {
     inv.innerHTML = social.invites.length ? `<div class="invite-strip"><div class="card"><h3>받은 초대 ${social.invites.length}개</h3><div class="invite-row">${noteCards('invites')}</div></div></div>` : '';
     $('#home-friends').innerHTML = social.friends.length
       ? `<div class="friends-strip">${social.friends.map(f => `<div class="fchip"><div class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></div><span>${esc(f.nick)}</span><small>${f.online ? '접속 중' : '쉬는 중'}</small></div>`).join('')}</div>`
-      : `<div class="card row" style="justify-content:space-between"><div><h3>아직 친구가 없어요</h3><p class="muted">친구의 이메일이나 친구 코드로 친구를 추가해 보세요.</p></div><a class="btn" href="#/friends">친구 추가하기</a></div>`;
+      : `<div class="card row" style="justify-content:space-between"><div><h3>아직 친구가 없어요</h3><p class="muted">친구의 이메일이나 친구맺기 코드로 친구를 추가해 보세요.</p></div><a class="btn" href="#/friends">친구 추가하기</a></div>`;
   };
   socialListeners.add(drawSocial);
   drawSocial();
@@ -731,14 +731,14 @@ function renderFriends() {
       <div class="stack">
         <div class="card stack">
           <h3>친구 추가하기</h3>
-          <p class="muted">친구의 <b>이메일</b>이나 <b>친구 코드</b>(8글자)를 적어 주세요.</p>
-          <input class="input" id="fr-q" placeholder="예) friend@naver.com 또는 AB12CD34" aria-label="친구 이메일 또는 친구 코드">
+          <p class="muted">친구의 <b>이메일</b>이나 <b>친구맺기 코드</b>(8글자)를 적어 주세요.</p>
+          <input class="input" id="fr-q" placeholder="예) friend@naver.com 또는 AB12CD34" aria-label="친구 이메일 또는 친구맺기 코드">
           <button class="btn big wide" id="fr-add"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 신청 보내기</button>
         </div>
         <div class="card stack">
-          <h3>내 친구 코드</h3>
+          <h3>내 친구맺기 코드</h3>
           <div class="code-box"><span class="code-big" id="fr-code"></span><button class="btn light small" id="fr-copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> 복사</button></div>
-          <p class="muted">친구에게 이 코드를 알려 주면 나를 찾을 수 있어요.</p>
+          <p class="muted">친구에게 이 코드를 알려 주면, 친구가 이 코드로 나에게 친구 신청을 할 수 있어요.</p>
         </div>
       </div>
       <div class="stack" id="fr-lists"></div>
@@ -746,7 +746,7 @@ function renderFriends() {
   </main>`);
   const add = async () => {
     const q = $('#fr-q').value.trim();
-    if (!q) return toast('친구의 이메일이나 친구 코드를 적어 주세요.');
+    if (!q) return toast('친구의 이메일이나 친구맺기 코드를 적어 주세요.');
     $('#fr-add').disabled = true;
     try { const d = await api('/api/friends/request', { query: q }); toast(d.message, 4500); $('#fr-q').value = ''; await refreshSocial(); }
     catch (err) { toast(err.message, 4000); }
@@ -754,7 +754,7 @@ function renderFriends() {
   };
   $('#fr-add').addEventListener('click', add);
   $('#fr-q').addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
-  $('#fr-copy').addEventListener('click', async () => toast(await copyText(social.code) ? '친구 코드를 복사했어요.' : '복사가 안 됐어요. 코드를 직접 알려 주세요.'));
+  $('#fr-copy').addEventListener('click', async () => toast(await copyText(social.code) ? '친구맺기 코드를 복사했어요.' : '복사가 안 됐어요. 코드를 직접 알려 주세요.'));
 
   const frPicked = new Set(); // 친구 목록에서 고른 친구들
   const personRow = (p, right, sub) => `<div class="person"><div class="av"><img src="${avatarUrl(p.avatar)}" alt=""><span class="dot ${p.online ? 'on' : ''}"></span></div>

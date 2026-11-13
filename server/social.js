@@ -11,7 +11,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const isOnline = uid => (onlineCount.get(uid) || 0) > 0;
 const notify = (uid, event, data = {}) => io?.to('u:' + uid).emit(event, data);
 
-// 친구 코드: 친구에게 알려 주면 나를 찾을 수 있는 8글자
+// 친구맺기 코드: 친구에게 알려 주면 나를 찾을 수 있는 8글자
 export async function friendCode(uid) {
   const row = await db.get('SELECT friend_code FROM users WHERE id = ?', uid);
   if (row?.friend_code) return row.friend_code;
@@ -78,14 +78,14 @@ const fail = (res, msg, code = 400) => res.status(code).json({ error: msg });
 export function socialRoutes(app) {
   app.get('/api/social', requireUser, ah(async (req, res) => res.json(await socialState(req.user.id))));
 
-  // 친구 신청 (이메일 또는 친구 코드, 또는 같이 했던 사람의 번호)
+  // 친구 신청 (이메일 또는 친구맺기 코드, 또는 같이 했던 사람의 번호)
   app.post('/api/friends/request', requireUser, ah(async (req, res) => {
     const me = req.user.id;
     let target = null;
     if (req.body?.userId) target = await db.get('SELECT * FROM users WHERE id = ?', Number(req.body.userId));
     else {
       const q = String(req.body?.query || '').trim();
-      if (!q) return fail(res, '친구의 이메일이나 친구 코드를 적어 주세요.');
+      if (!q) return fail(res, '친구의 이메일이나 친구맺기 코드를 적어 주세요.');
       target = q.includes('@')
         ? await db.get('SELECT * FROM users WHERE email = ?', q.toLowerCase())
         : await db.get('SELECT * FROM users WHERE friend_code = ?', q.toUpperCase().replace(/\s/g, ''));
