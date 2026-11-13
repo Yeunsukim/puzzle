@@ -242,6 +242,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       onDrop: (id, x, y) => socket.emit('drop', { id, x, y }),
       onClickPiece: (id, pt) => showMenu(id, pt),
       onDoubleClickPiece: id => { closeMenu(); state.board.setSelected(id); },
+      // 다른 조각을 누르면 열려 있던 팝업은 닫는다 (새 조각은 누르는 순간 이미 골라짐)
+      onPressPiece: id => { if (state.menuFor >= 0 && state.menuFor !== id) closeMenu(); },
       onClickEmpty: () => hideMenu(),
       // '누른 곳으로 옮기기': 잡았다가 바로 그 자리에 놓는다
       onTapMove: (id, x, y) => {

@@ -73,6 +73,15 @@ export class Board {
     this.onTheme = () => { this.readTheme(); this.need = true; };
     window.addEventListener('themechange', this.onTheme);
 
+    if (/debug=1/.test(location.search)) {
+      const box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:999;background:rgba(0,0,0,.8);color:#fff;font:14px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:520px;pointer-events:none;white-space:pre';
+      document.body.appendChild(box);
+      const lines = [];
+      this.debug = t => { lines.push(new Date().toLocaleTimeString('ko-KR') + ' ' + t); while (lines.length > 14) lines.shift(); box.textContent = lines.join(String.fromCharCode(10)); };
+      this.debugBox = box;
+    }
+
     this.alive = true;
     const tick = () => { if (!this.alive) return; this.step(); requestAnimationFrame(tick); };
     requestAnimationFrame(tick);
@@ -82,6 +91,7 @@ export class Board {
     this.alive = false;
     this.ro.disconnect();
     window.removeEventListener('themechange', this.onTheme);
+    this.debugBox?.remove();
   }
 
   readTheme() {
@@ -281,7 +291,13 @@ export class Board {
       this.tapWorld = w;
       this.o.onDoubleClickPiece?.(p.id);
       this.shake(p.id);
+    } else if (free && this.selected !== p.id) {
+      // 조각을 누르는 순간 바로 흰 테두리 + 크기 (누르고 있는 동안 어떤 조각인지 보이게)
+      this.tapWorld = w;
+      this.setSelected(p.id);
+      this.o.onPressPiece?.(p.id);
     }
+    this.debug?.(`누름 조각=${free ? p.id : '없음'} 두번째=${!!this.ptr.dbl} 선택=${this.selected} 종류=${e.pointerType}`);
   }
 
   startPinch() {
@@ -358,6 +374,7 @@ export class Board {
     if (this.drag) {
       const p = this.pieces[this.drag.id];
       this.drag = null;
+      this.debug?.(`놓음 조각=${p.id} 움직인거리=${Math.round(Math.hypot(e.clientX - ptr.sx, e.clientY - ptr.sy))}`);
       const dist = Math.hypot(e.clientX - ptr.sx, e.clientY - ptr.sy);
       this.o.onDrop(p.id, p.x, p.y);
       if (dist < SMALL_DRAG) {
@@ -366,6 +383,7 @@ export class Board {
         if (!ptr.dbl) this.tap(p.id, e);
       } else if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
     } else if (!ptr.moved && !cancelled) {
+      this.debug?.(`뗌(누르기) 조각=${ptr.piece} 두번째=${!!ptr.dbl}`);
       this.tapWorld = this.toWorld(e.clientX, e.clientY); // 누른 곳 (틀 안팎 판단용)
       // '놓을 곳 누르기' 중이면 누른 곳으로 조각을 옮긴다
       if (this.moveMode >= 0) {
