@@ -37,11 +37,35 @@ authRoutes(app);
 socialRoutes(app);
 
 // 음성 대화 연결을 도와주는 서버 주소 (STUN: 무료 공개 서버. TURN: 직접 연결이 막힐 때 쓰는 중계 서버, 있을 때만)
-const iceServers = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+// 중계 서버 설정 방법: 음성대화_중계서버_설정방법.md
+//  - ExpressTURN 등 고정 아이디: TURN_URL / TURN_USER / TURN_PASS
+//  - Metered: METERED_APP(앱 이름) / METERED_API_KEY (임시 아이디를 받아 온다)
+const baseIce = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
 if (process.env.TURN_URL) {
-  iceServers.push({ urls: process.env.TURN_URL.split(',').map(s => s.trim()), username: process.env.TURN_USER || '', credential: process.env.TURN_PASS || '' });
+  const urls = [];
+  for (const u of process.env.TURN_URL.split(',').map(x => x.trim()).filter(Boolean)) {
+    const full = /^turns?:/.test(u) ? u : 'turn:' + u; // 'relay1.expressturn.com:3478' 처럼 앞부분 없이 넣어도 되게
+    urls.push(full);
+    // 회사·학교처럼 UDP가 막힌 곳을 위해 TCP 방식도 함께 시도
+    if (!/transport=/.test(full) && full.startsWith('turn:')) urls.push(full + (full.includes('?') ? '&' : '?') + 'transport=tcp');
+  }
+  baseIce.push({ urls, username: (process.env.TURN_USER || '').trim(), credential: (process.env.TURN_PASS || '').trim() });
 }
-app.get('/api/config', (_req, res) => res.json({ googleClientId, lanUrls: lanUrls(), publicUrl, iceServers }));
+let meteredCache = { at: 0, list: null };
+async function getIceServers() {
+  const app = (process.env.METERED_APP || '').trim(), key = (process.env.METERED_API_KEY || '').trim();
+  if (!app || !key) return baseIce;
+  if (meteredCache.list && Date.now() - meteredCache.at < 30 * 60e3) return [...baseIce, ...meteredCache.list];
+  try {
+    const host = app.includes('.') ? app : app + '.metered.live';
+    const r = await fetch(`https://${host}/api/v1/turn/credentials?apiKey=${encodeURIComponent(key)}`);
+    const list = await r.json();
+    if (Array.isArray(list)) meteredCache = { at: Date.now(), list };
+  } catch (err) { console.error('중계 서버 아이디를 받아 오지 못했어요:', err.message); }
+  return [...baseIce, ...(meteredCache.list || [])];
+}
+const hasTurn = () => !!(process.env.TURN_URL || (process.env.METERED_APP && process.env.METERED_API_KEY));
+app.get('/api/config', ah(async (_req, res) => res.json({ googleClientId, lanUrls: lanUrls(), publicUrl, iceServers: await getIceServers(), turn: hasTurn() })));
 
 // ---- 퍼즐 그림 ----
 app.get('/api/pictures', requireUser, ah(async (req, res) => {
@@ -168,6 +192,7 @@ server.listen(PORT, '0.0.0.0', () => {
   if (publicUrl) console.log(`  ▶ 인터넷 주소:        ${publicUrl}`);
   console.log(`  ▶ 이 컴퓨터에서:      http://localhost:${PORT}`);
   for (const u of lanUrls()) console.log(`  ▶ 같은 와이파이에서:  ${u}`);
+  console.log(hasTurn() ? '  ✔ 음성 중계 서버: 켜짐' : '  · 음성 중계 서버: 꺼짐 (멀리 있는 친구와 음성 대화를 하려면 음성대화_중계서버_설정방법.md)');
   console.log(googleClientId ? '  ✔ 구글 로그인: 켜짐' : '  · 구글 로그인: 꺼짐 (GOOGLE_CLIENT_ID 를 넣으면 켜져요)');
   console.log('');
 });
