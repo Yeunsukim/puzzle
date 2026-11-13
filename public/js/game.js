@@ -48,13 +48,13 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <div class="hint-help" id="g-help">조각을 <b>누른 채 끌어서</b> 틀에 놓아요.<br>조각을 <b>한 번 누르면</b> 왼쪽·오른쪽 돌리기 메뉴가 나와요.</div>
       <div class="piece-menu" id="g-menu" hidden>
         <div class="rot-row">
-          <button class="btn" id="m-rot-l" aria-label="왼쪽으로 돌리기"><span class="big-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span>왼쪽으로</button>
-          <button class="btn" id="m-rot-r" aria-label="오른쪽으로 돌리기"><span class="big-ic"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></span>오른쪽으로</button>
+          <button class="btn" id="m-rot-l" aria-label="왼쪽으로 돌리기" title="왼쪽으로 돌리기"><span class="big-ic"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></span>왼쪽으로</button>
+          <button class="btn" id="m-rot-r" aria-label="오른쪽으로 돌리기" title="오른쪽으로 돌리기"><span class="big-ic"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></span>오른쪽으로</button>
         </div>
-        <button class="btn light" id="m-move"><i class="fa-solid fa-hand-pointer" aria-hidden="true"></i> 누른 곳으로 옮기기</button>
-        <button class="btn light" id="m-out"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> 밖으로 빼기</button>
-        <button class="btn light" id="m-unsel"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i> 선택 해제</button>
-        <button class="btn light" id="m-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 닫기</button>
+        <button class="btn light" id="m-move" aria-label="누른 곳으로 옮기기" title="누른 곳으로 옮기기"><i class="fa-solid fa-hand-pointer" aria-hidden="true"></i> 누른 곳으로 옮기기</button>
+        <button class="btn light" id="m-out" aria-label="밖으로 빼기" title="밖으로 빼기"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> 밖으로 빼기</button>
+        <button class="btn light" id="m-unsel" aria-label="선택 해제" title="선택 해제"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i> 선택 해제</button>
+        <button class="btn light" id="m-close" aria-label="닫기" title="닫기"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 닫기</button>
       </div>
       <div class="loading" id="g-loading"><div><img src="/assets/logo.svg" alt=""><h3 id="g-loading-msg">퍼즐 방에 들어가는 중...</h3></div></div>
     </main>

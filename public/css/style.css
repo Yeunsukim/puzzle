@@ -619,3 +619,14 @@ button, input, select { font: inherit; color: inherit; }
   .info-val { font-size: 20px; }
   .info-val.time { font-size: 22px; }
 }
+/* 휴대폰: 조각 팝업도 아이콘만, 한 줄로 */
+@media (max-width: 760px) {
+  .piece-menu { width: auto; flex-direction: row; flex-wrap: wrap; gap: 6px; padding: 8px; border-radius: 18px; max-width: calc(100vw - 20px); }
+  .piece-menu .rot-row { display: contents; }
+  .piece-menu .btn, .piece-menu .rot-row .btn {
+    width: 48px; height: 48px; min-height: 48px; padding: 0; border-radius: 14px;
+    font-size: 0; gap: 0; justify-content: center; flex-direction: row;
+  }
+  .piece-menu .btn .fa-solid, .piece-menu .big-ic .fa-solid { font-size: 20px; margin: 0; }
+  .piece-menu .big-ic { font-size: 0; }
+}
