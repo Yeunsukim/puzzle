@@ -246,9 +246,9 @@ function renderDrawer() {
         <div style="min-width:0"><div class="nick">${esc(me.nick)}</div><div class="mail">${esc(me.email)}</div>
         <span class="how">${me.google ? '구글 계정으로 로그인' : '이메일로 로그인'}</span></div></div>
       <div class="stats">
-        <div><b>${stats.done}</b>완성한 퍼즐</div>
-        <div><b>${stats.placed}</b>맞춘 조각</div>
-        <div><b>${social.friends.length}</b>친구</div>
+        <a href="#/records" title="내가 완성한 퍼즐 보기"><b>${stats.done}</b>완성한 퍼즐</a>
+        <a href="#/records" title="맞춘 조각 기록 보기"><b>${stats.placed}</b>맞춘 조각</a>
+        <a href="#/friends" title="내 친구 보기"><b>${social.friends.length}</b>친구</a>
       </div>
     </div>
     ${alerts ? `<div class="drawer-sec"><h4>새 알림 ${alerts}개</h4>${noteCards('invites')}${noteCards('requests')}</div>` : ''}
