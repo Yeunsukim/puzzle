@@ -709,3 +709,17 @@ button, input, select { font: inherit; color: inherit; }
   .hall { grid-template-columns: 1fr; }
   .prize-row { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* 갤러리·랭킹 전시 켜기/끄기 (밀어서 켜는 스위치 모양, 한 번 누르면 바뀜) */
+.exhibit-box { display: flex; flex-direction: column; gap: 8px; }
+.exhibit-box .muted { font-size: 16px; }
+.exhibit-toggle { display: inline-flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 18px 0 10px; border-radius: 999px; border: 2px solid var(--line); background: var(--card); color: var(--ink-2); font-size: 18px; font-weight: 700; cursor: pointer; align-self: flex-start; }
+.exhibit-toggle .sw { position: relative; width: 52px; height: 30px; border-radius: 999px; background: var(--paper-3); flex: none; transition: background .2s; }
+.exhibit-toggle .sw::after { content: ''; position: absolute; left: 4px; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .2s; }
+.exhibit-toggle.on { border-color: var(--teal); color: var(--ink); }
+.exhibit-toggle.on .sw { background: var(--teal); }
+.exhibit-toggle.on .sw::after { left: 26px; }
+.exhibit-toggle.small { min-height: 48px; font-size: 16px; padding: 0 14px 0 8px; }
+.exhibit-toggle.small .sw { width: 44px; height: 26px; }
+.exhibit-toggle.small .sw::after { width: 18px; height: 18px; }
+.exhibit-toggle.small.on .sw::after { left: 22px; }

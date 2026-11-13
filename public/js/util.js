@@ -1,7 +1,7 @@
 // 여러 화면에서 같이 쓰는 도구들
 
 // 화면 코드 버전 (메뉴 맨 아래에 보여요. 새 코드가 들어왔는지 확인할 때 써요)
-export const VERSION = '11월 14일 · 1번';
+export const VERSION = '11월 14일 · 2번';
 
 export const AVATARS = [
   { id: 'bunny', name: '토끼' },

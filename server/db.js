@@ -129,6 +129,8 @@ async function openPostgres() {
     async exec(sql) { await pool.query(sql); },
   };
   await db.exec(PG_SCHEMA);
+  // 예전 데이터베이스에 없던 칸 추가 (인터넷 데이터베이스)
+  await db.exec('ALTER TABLE pictures ADD COLUMN IF NOT EXISTS exhibit INTEGER NOT NULL DEFAULT 1');
   return db;
 }
 
@@ -141,6 +143,7 @@ async function openSqlite() {
   const hasCol = (t, c) => s.prepare(`PRAGMA table_info(${t})`).all().some(x => x.name === c);
   if (!hasCol('pictures', 'category')) s.exec("ALTER TABLE pictures ADD COLUMN category TEXT NOT NULL DEFAULT 'mine'");
   if (!hasCol('users', 'friend_code')) s.exec('ALTER TABLE users ADD COLUMN friend_code TEXT');
+  if (!hasCol('pictures', 'exhibit')) s.exec('ALTER TABLE pictures ADD COLUMN exhibit INTEGER NOT NULL DEFAULT 1');
   const plain = r => (r ? { ...r } : null);
   return {
     kind: 'sqlite',

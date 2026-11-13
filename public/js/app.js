@@ -671,6 +671,10 @@ function renderCreate() {
         <div class="stack">
           <div class="field"><label for="c-title">퍼즐 이름</label><input class="input" id="c-title" maxlength="30" value="나의 퍼즐"></div>
           <button class="btn line" id="re-pick"><i class="fa-solid fa-images" aria-hidden="true"></i> 다른 사진 고르기</button>
+          <div class="exhibit-box">
+            <button class="exhibit-toggle on" id="c-exhibit" aria-pressed="true"><span class="sw"></span><span class="tx">갤러리·랭킹에 전시하기</span></button>
+            <p class="muted" id="c-exhibit-note">완성해서 랭킹 5위 안에 들면 모든 사람이 볼 수 있는 갤러리에 걸려요. 가족 얼굴 사진처럼 다른 사람에게 보이기 싫은 사진이면 눌러서 꺼 주세요.</p>
+          </div>
         </div>
       </div>
       <div class="step-title"><span class="step-num">02</span><h3>조각 수 고르기</h3></div>
@@ -699,6 +703,15 @@ function renderCreate() {
   ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', e => useFile(e.dataTransfer.files[0]));
   $('#re-pick').addEventListener('click', () => { file.value = ''; file.click(); });
+  $('#c-exhibit').addEventListener('click', e => {
+    const b = e.currentTarget, on = !b.classList.contains('on');
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+    $('.tx', b).textContent = on ? '갤러리·랭킹에 전시하기' : '전시하지 않기 (나만 보기)';
+    $('#c-exhibit-note').textContent = on
+      ? '완성해서 랭킹 5위 안에 들면 모든 사람이 볼 수 있는 갤러리에 걸려요. 가족 얼굴 사진처럼 다른 사람에게 보이기 싫은 사진이면 눌러서 꺼 주세요.'
+      : '이 사진으로 만든 퍼즐은 랭킹과 갤러리에 나오지 않아요. 내 기록에는 그대로 남아요. 나중에 내 기록에서 다시 켤 수 있어요.';
+  });
 
   countPicker($('#counts'), () => img.width / img.height, (v, g) => {
     n = v; grid = g;
@@ -720,7 +733,7 @@ function renderCreate() {
       const ctx = cv.getContext('2d');
       ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
-      const d = await api('/api/pictures', { title: $('#c-title').value, dataUrl: cv.toDataURL('image/jpeg', 0.88), w, h });
+      const d = await api('/api/pictures', { title: $('#c-title').value, dataUrl: cv.toDataURL('image/jpeg', 0.88), w, h, exhibit: $('#c-exhibit').classList.contains('on') });
       await startRoom(d.picture.id, grid, btn);
     } catch (err) {
       toast(err.message);
@@ -889,6 +902,7 @@ async function renderRecords() {
           <div class="row" style="margin-top:12px">
             <button class="btn small" data-view="${i}"><i class="fa-solid fa-expand" aria-hidden="true"></i> 크게 보기</button>
             <button class="btn line small" data-save="${i}"><i class="fa-solid fa-download" aria-hidden="true"></i> 그림 저장하기</button>
+            ${r.myPhoto ? `<button class="exhibit-toggle small ${r.exhibit ? 'on' : ''}" data-exhibit="${r.picture_id}" aria-pressed="${r.exhibit}"><span class="sw"></span><span class="tx">${r.exhibit ? '갤러리 전시 중' : '전시 안 함'}</span></button>` : ''}
           </div>
         </div>
       </div>`).join('')}</div>`
@@ -913,6 +927,17 @@ async function renderRecords() {
     }
   })();
   $$('[data-view]', app).forEach(b => b.addEventListener('click', () => viewArtwork(records[Number(b.dataset.view)], myNick)));
+  $$('[data-exhibit]', app).forEach(b => b.addEventListener('click', async () => {
+    const id = b.dataset.exhibit, on = !b.classList.contains('on');
+    b.disabled = true;
+    try {
+      await api(`/api/pictures/${id}/exhibit`, { on });
+      // 같은 사진으로 만든 다른 기록의 단추도 함께 바꾼다
+      $$(`[data-exhibit="${id}"]`, app).forEach(x => { x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); $('.tx', x).textContent = on ? '갤러리 전시 중' : '전시 안 함'; });
+      toast(on ? '이 사진을 갤러리·랭킹에 전시해요.' : '이 사진은 이제 갤러리·랭킹에 나오지 않아요.');
+    } catch (err) { toast(err.message); }
+    finally { b.disabled = false; }
+  }));
   $$('[data-save]', app).forEach(b => b.addEventListener('click', async () => {
     b.disabled = true;
     try {
