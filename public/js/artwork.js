@@ -1,6 +1,6 @@
 // 완성한 퍼즐 그림: 원래 그림 위에 조각 선을 은은하게 그리고, 오른쪽 아래에 작품 서명처럼
 // 제목 · 날짜 · 함께 맞춘 사람을 적는다. (내 기록, 홈 화면, 저장하기에 쓴다)
-import { cropRect, gridFor, loadImage } from './util.js';
+import { cropRect, gridFor, loadImage, $, esc, toast } from './util.js';
 import { piecePath, pieceDirs } from './jigsaw.js';
 
 const imgCache = new Map();
@@ -102,4 +102,34 @@ export function downloadCanvas(cv, rec) {
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }, 'image/png');
+}
+
+// 완성 그림 크게 보기: 크게·작게 단추, 저장하기, 닫기
+export async function viewArtwork(rec, nick) {
+  const bg = document.createElement('div');
+  bg.className = 'art-viewer';
+  bg.innerHTML = `
+    <div class="av-bar">
+      <b>${esc(rec.title)}</b>
+      <button class="btn light small" id="av-in"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> 크게</button>
+      <button class="btn light small" id="av-out"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i> 작게</button>
+      <button class="btn teal small" id="av-save"><i class="fa-solid fa-download" aria-hidden="true"></i> 저장하기</button>
+      <button class="btn paper small" id="av-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 닫기</button>
+    </div>
+    <div class="av-stage"><p class="av-wait">그림을 준비하는 중...</p></div>`;
+  document.body.appendChild(bg);
+  $('#av-close', bg).addEventListener('click', () => bg.parentNode && bg.parentNode.removeChild(bg));
+  let cv;
+  try { cv = await renderArtwork(rec, nick, 2400); } catch { $('.av-wait', bg).textContent = '그림을 불러오지 못했어요.'; return; }
+  const img = document.createElement('img');
+  img.src = cv.toDataURL('image/jpeg', 0.92);
+  img.alt = `${rec.title} 완성 그림`;
+  const stage = $('.av-stage', bg);
+  stage.innerHTML = '';
+  stage.appendChild(img);
+  let zoom = 1;
+  const apply = () => { img.style.width = zoom === 1 ? '' : Math.round(stage.clientWidth * zoom) + 'px'; img.classList.toggle('zoomed', zoom > 1); };
+  $('#av-in', bg).addEventListener('click', () => { zoom = Math.min(4, zoom * 1.5); apply(); });
+  $('#av-out', bg).addEventListener('click', () => { zoom = Math.max(1, zoom / 1.5); apply(); });
+  $('#av-save', bg).addEventListener('click', () => { downloadCanvas(cv, rec); toast('그림을 저장했어요. 다운로드 폴더를 확인해 주세요.'); });
 }

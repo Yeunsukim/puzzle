@@ -9,6 +9,7 @@ import { db, ah, ROOT, UPLOAD_DIR } from './db.js';
 import { authRoutes, requireUser, userFromCookie, googleClientId } from './auth.js';
 import { createRoom, roomInfo, progressInfo, attachSockets, saveAll } from './rooms.js';
 import { socialRoutes, attachSocial } from './social.js';
+import { rankingRoutes } from './ranking.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 // 인터넷 주소: 직접 적은 것(PUBLIC_URL) → Render가 알려 주는 주소 → 없으면 같은 와이파이 주소를 쓴다
@@ -35,6 +36,7 @@ function lanUrls() {
 
 authRoutes(app);
 socialRoutes(app);
+rankingRoutes(app);
 
 // 음성 대화 연결을 도와주는 서버 주소 (STUN: 무료 공개 서버. TURN: 직접 연결이 막힐 때 쓰는 중계 서버, 있을 때만)
 // 중계 서버 설정 방법: 음성대화_중계서버_설정방법.md

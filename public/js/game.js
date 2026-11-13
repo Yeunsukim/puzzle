@@ -454,6 +454,20 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   $('#g-invite2').addEventListener('click', openInvite);
   setInviteHandler?.(openInvite); // 왼쪽 위 메뉴의 '친구 부르기'도 이 창을 연다
 
+  // 완성 축하 창에 보여 줄 순위 (5위 안이면 명예의 전당!)
+  function rankBlock(sum) {
+    const r = sum.rank;
+    if (!r) return '';
+    const best = [r.week && { t: '이번 주', ...r.week }, r.month && { t: '이번 달', ...r.month }].filter(Boolean);
+    const top = best.filter(x => x.rank <= 5);
+    const icon = n => (n === 1 ? 'crown' : n <= 3 ? 'medal' : 'award');
+    return `<div class="done-rank ${top.length ? 'top' : ''}">
+      ${top.length ? `<b><i class="fa-solid fa-${icon(Math.min(...top.map(x => x.rank)))}" aria-hidden="true"></i> 명예의 전당에 올랐어요!</b>` : ''}
+      ${best.map(x => `${x.t} 랭킹 <b style="display:inline;font-size:20px">${x.rank}위</b> (${x.total}개 작품 중)`).join(' · ')}
+      <div style="margin-top:4px">점수 ${(sum.score || 0).toLocaleString('ko-KR')}점${top.length ? ' · 갤러리에 액자로 전시돼요' : ''}</div>
+    </div>`;
+  }
+
   // ---- 완성! ----
   function showDone(sum, quiet) {
     hideMenu();
@@ -464,6 +478,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <h2 class="center" style="margin-top:8px">퍼즐을 완성했어요!</h2>
       <img class="done-img" src="${esc(sum.url)}" alt="">
       <h3 class="center" style="margin-bottom:14px">「${esc(sum.title)}」 ${sum.pieces}조각</h3>
+      ${rankBlock(sum)}
       <div class="done-facts">
         <div>걸린 시간<b>${fmtTime(sum.seconds)}</b></div>
         <div>내가 맞춘 조각<b>${mine ? mine.placed : 0}개</b></div>
@@ -475,6 +490,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       </ul>
       <div class="stack">
         <a class="btn big wide" href="#/records"><i class="fa-solid fa-trophy" aria-hidden="true"></i> 내 기록 보기</a>
+        <a class="btn line wide" href="#/gallery"><i class="fa-solid fa-landmark" aria-hidden="true"></i> 갤러리 보기</a>
         <a class="btn teal wide" href="#/start"><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 다른 퍼즐 하기</a>
         <button class="btn light wide" data-close>완성된 그림 구경하기</button>
       </div>`);

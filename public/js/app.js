@@ -3,7 +3,8 @@
 import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal, getTheme, setTheme, isDark, VERSION } from './util.js';
 import { openRoom } from './game.js';
 import { piecePath, pieceDirs } from './jigsaw.js';
-import { renderArtwork, downloadCanvas } from './artwork.js';
+import { renderArtwork, downloadCanvas, viewArtwork } from './artwork.js';
+import { hallOfFame, renderGallery, trophyList } from './gallery.js';
 
 const app = $('#app');
 let me = null;
@@ -58,6 +59,9 @@ async function route() {
     case 'records': return renderRecords();
     case 'friends': return renderFriends();
     case 'saved': return renderSaved();
+    case 'gallery':
+      shell('<main class="page"></main>');
+      return renderGallery($('main', app));
     case 'room':
       currentRoom = arg.toUpperCase();
       cleanup = await openRoom(app, currentRoom, { me, config, go, openDrawer, getSocial: () => social, onSocial: fn => socialListeners.add(fn), inviteLink, setLeaveGuard, setInviteHandler: fn => { inviteHandler = fn; } });
@@ -255,6 +259,7 @@ function renderDrawer() {
       ${item('#/saved', 'clock-rotate-left', '하던 퍼즐 이어하기', 'saved')}
       ${item('#/create', 'image', '내 사진으로 만들기', 'create')}
       ${item('#/friends', 'user-group', '친구', 'friends', social.requests.length)}
+      ${item('#/gallery', 'landmark', '갤러리 (랭킹 작품)', 'gallery')}
       ${item('#/records', 'trophy', '내 기록', 'records')}
       ${item('#/profile', 'pen', '캐릭터·별명 바꾸기', 'profile')}
     </nav></div>
@@ -452,6 +457,7 @@ async function renderHome() {
   </div>${wave}</section>
   <main class="page">
     <div id="home-invites"></div>
+    <section class="section" id="home-hall"></section>
     <section class="section" id="home-saved-sec" hidden>
       <div class="section-head"><div><span class="eyebrow">이어하기</span><h2 style="margin-top:8px">하던 퍼즐</h2><p>저장해 둔 퍼즐을 이어서 맞춰요.</p></div><a class="btn line" href="#/saved"><i class="fa-solid fa-list" aria-hidden="true"></i> 모두 보기</a></div>
       <div class="saved-list" id="home-saved"></div>
@@ -499,6 +505,8 @@ async function renderHome() {
   socialListeners.add(drawSocial);
   drawSocial();
   refreshSocial();
+
+  hallOfFame($('#home-hall'));
 
   // 내가 완성한 그림이 있으면 첫 화면 오른쪽 그림 카드를 그걸로 바꾼다 (최근 것 4장, 조각 선 + 서명)
   api('/api/records').then(async d => {
@@ -887,6 +895,11 @@ async function renderRecords() {
     : `<div class="card empty"><img src="/assets/logo.svg" alt=""><h3>아직 완성한 퍼즐이 없어요</h3><p class="muted" style="margin:8px 0 22px">첫 퍼즐을 맞춰 볼까요?</p><a class="btn big" href="#/start">퍼즐 시작하기</a></div>`}`;
 
   // 작은 그림부터 하나씩 그린다 (조각 선 + 서명)
+  // 내 트로피 (랭킹 선물)
+  const tr = document.createElement('div');
+  $('.stat-row', app)?.after(tr);
+  trophyList(tr);
+
   const thumbs = $$('.art-thumb canvas', app);
   (async () => {
     for (let i = 0; i < thumbs.length; i++) {
@@ -909,36 +922,6 @@ async function renderRecords() {
     } catch { toast('그림을 만들지 못했어요. 다시 눌러 주세요.'); }
     finally { b.disabled = false; }
   }));
-}
-
-// 완성 그림 크게 보기: 크게·작게 단추, 저장하기, 닫기
-export async function viewArtwork(rec, nick) {
-  const bg = document.createElement('div');
-  bg.className = 'art-viewer';
-  bg.innerHTML = `
-    <div class="av-bar">
-      <b>${esc(rec.title)}</b>
-      <button class="btn light small" id="av-in"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> 크게</button>
-      <button class="btn light small" id="av-out"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i> 작게</button>
-      <button class="btn teal small" id="av-save"><i class="fa-solid fa-download" aria-hidden="true"></i> 저장하기</button>
-      <button class="btn paper small" id="av-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 닫기</button>
-    </div>
-    <div class="av-stage"><p class="av-wait">그림을 준비하는 중...</p></div>`;
-  document.body.appendChild(bg);
-  $('#av-close', bg).addEventListener('click', () => bg.parentNode && bg.parentNode.removeChild(bg));
-  let cv;
-  try { cv = await renderArtwork(rec, nick, 2400); } catch { $('.av-wait', bg).textContent = '그림을 불러오지 못했어요.'; return; }
-  const img = document.createElement('img');
-  img.src = cv.toDataURL('image/jpeg', 0.92);
-  img.alt = `${rec.title} 완성 그림`;
-  const stage = $('.av-stage', bg);
-  stage.innerHTML = '';
-  stage.appendChild(img);
-  let zoom = 1;
-  const apply = () => { img.style.width = zoom === 1 ? '' : Math.round(stage.clientWidth * zoom) + 'px'; img.classList.toggle('zoomed', zoom > 1); };
-  $('#av-in', bg).addEventListener('click', () => { zoom = Math.min(4, zoom * 1.5); apply(); });
-  $('#av-out', bg).addEventListener('click', () => { zoom = Math.max(1, zoom / 1.5); apply(); });
-  $('#av-save', bg).addEventListener('click', () => { downloadCanvas(cv, rec); toast('그림을 저장했어요. 다운로드 폴더를 확인해 주세요.'); });
 }
 
 // ---------------- 시작 ----------------

@@ -1,6 +1,7 @@
 // 게임방: 조각 위치·회전·누가 잡고 있는지를 서버가 기준으로 관리하고, 모두에게 알려 준다.
 import crypto from 'node:crypto';
 import { db } from './db.js';
+import { rankOf, scoreOf } from './ranking.js';
 
 export const S = 100;            // 한 칸(조각) 크기 = 100 (게임판 단위)
 export const MAX_PLAYERS = 6;    // 나 + 친구 5명
@@ -208,11 +209,12 @@ function summary(room) {
   return { code: room.code, title: room.picture.title, url: room.picture.url, cols: room.cols, rows: room.rows, pieces: room.cols * room.rows, seconds, players, finishedAt: st.finishedAt };
 }
 
-function finish(room) {
+async function finish(room) {
   const st = room.state;
   st.finishedAt = Date.now();
   const sum = summary(room);
-  (async () => {
+  sum.score = scoreOf(sum.pieces, sum.seconds);
+  await (async () => {
     for (const p of sum.players) {
       const friends = sum.players.filter(q => q.uid !== p.uid).map(q => q.nick);
       await db.run('INSERT INTO records (user_id, room_code, picture_id, title, url, pieces, seconds, placed, friends, finished) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -221,6 +223,9 @@ function finish(room) {
     await db.run('DELETE FROM saved_games WHERE room_code = ?', room.code); // 다 맞췄으니 '하던 퍼즐'에서 빼기
     await saveRoom(room);
   })().catch(err => console.error('기록 저장 실패:', err.message));
+  try { sum.rank = await rankOf(room.code); } catch (err) { console.error('순위 계산 실패:', err.message); }
+  room.state.lastSummary = sum; // 나중에 들어온 사람도 순위를 볼 수 있게
+  room.dirty = true;
   return sum;
 }
 
@@ -240,7 +245,7 @@ function snapshot(room, uid) {
     pieces: room.state.pieces.map(p => pub(room, p)),
     players: playersPayload(room),
     startedAt: room.state.startedAt, finishedAt: room.state.finishedAt,
-    summary: room.state.finishedAt ? summary(room) : null,
+    summary: room.state.finishedAt ? (room.state.lastSummary || summary(room)) : null,
     now: Date.now(), me: uid, maxPlayers: MAX_PLAYERS,
     voice: voiceList(room),
   };
@@ -261,7 +266,7 @@ export function attachSockets(io) {
       room.dirty = true;
       io.to(room.code).emit('pieces', { list: changed.map(p => pub(room, p)), locked, by: uid, scores: room.state.scores, done: room.lockedCount });
       if (room.lockedCount === room.state.pieces.length && !room.state.finishedAt) {
-        io.to(room.code).emit('done', finish(room));
+        finish(room).then(sum => io.to(room.code).emit('done', sum));
       }
     };
 

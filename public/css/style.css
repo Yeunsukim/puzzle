@@ -630,3 +630,82 @@ button, input, select { font: inherit; color: inherit; }
   .piece-menu .btn .fa-solid, .piece-menu .big-ic .fa-solid { font-size: 20px; margin: 0; }
   .piece-menu .big-ic { font-size: 0; }
 }
+
+/* ---- 랭킹 · 명예의 전당 · 갤러리 ---- */
+.seg { display: inline-flex; background: var(--paper-2); border-radius: 999px; padding: 5px; gap: 4px; }
+.seg button { min-height: 50px; padding: 0 22px; border: none; border-radius: 999px; background: transparent; font-size: 18px; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.seg button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+.hall { display: grid; grid-template-columns: repeat(4, 1fr); gap: 34px 26px; align-items: start; }
+.exhibit { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.exhibit.big { grid-column: span 2; grid-row: span 2; }
+.empty-hall { grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--ink-2); }
+
+/* 액자 공통: 바깥 틀 + 안쪽 매트(종이) + 그림 */
+.frame { position: relative; display: block; width: 100%; border: none; cursor: pointer; padding: 16px; border-radius: 4px; transition: transform .2s; }
+.frame:hover { transform: translateY(-4px); }
+.frame .mat { display: block; background: #F6F1E6; padding: 8%; box-shadow: inset 0 2px 8px rgba(0,0,0,.25); }
+.frame canvas { display: block; width: 100%; height: auto; min-height: 60px; background: #E9E2D3; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.exhibit.big .frame { padding: 24px; }
+
+/* 1위 황금 액자 */
+.frame-gold { background: linear-gradient(135deg, #7A5A12 0%, #F7DB7C 18%, #B6871F 36%, #FFF0B3 50%, #A97B1C 66%, #F1D06E 84%, #7A5A12 100%);
+  box-shadow: inset 0 0 0 3px #5E430B, inset 0 0 0 7px #F9E39A, inset 0 0 0 9px #8A6516, 0 24px 50px rgba(0,0,0,.45), 0 0 40px rgba(247,219,124,.35); }
+/* 2위 은 액자 */
+.frame-silver { background: linear-gradient(135deg, #6E7378 0%, #F2F4F6 20%, #9CA3AA 40%, #FFFFFF 52%, #8C939A 70%, #E3E7EB 86%, #6E7378 100%);
+  box-shadow: inset 0 0 0 3px #555B61, inset 0 0 0 7px #EEF1F4, 0 20px 44px rgba(0,0,0,.4); }
+/* 3위 동 액자 */
+.frame-bronze { background: linear-gradient(135deg, #6B3A16 0%, #E2A06A 22%, #9C5A2A 44%, #F3C49A 56%, #8A4E22 74%, #D69060 90%, #6B3A16 100%);
+  box-shadow: inset 0 0 0 3px #4F2A0F, inset 0 0 0 6px #EDB88A, 0 18px 40px rgba(0,0,0,.38); }
+/* 4위 원목 액자 */
+.frame-wood { background: repeating-linear-gradient(100deg, #5A3A22 0 6px, #6E4A2E 6px 11px, #4E321D 11px 15px, #7A5534 15px 22px);
+  box-shadow: inset 0 0 0 2px #3A2414, 0 16px 34px rgba(0,0,0,.34); }
+/* 5위 흰 액자 */
+.frame-white { background: #FBFAF7; padding: 12px; box-shadow: inset 0 0 0 1px #D8D2C6, 0 12px 28px rgba(0,0,0,.28); }
+
+/* 순위 리본 */
+.ribbon { position: absolute; top: -14px; left: 50%; translate: -50% 0; z-index: 2; padding: 5px 16px; border-radius: 999px; font-size: 16px; font-weight: 700; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+.ribbon.gold { background: linear-gradient(180deg, #FFE68A, #C99A2E); color: #4A3407; }
+.ribbon.silver { background: linear-gradient(180deg, #FFFFFF, #AEB5BC); color: #2F353A; }
+.ribbon.bronze { background: linear-gradient(180deg, #F6C89E, #A8622F); color: #3A1F0A; }
+.ribbon.wood { background: #7A5534; color: #FBEBD5; }
+.ribbon.white { background: #FFFFFF; color: #3A3A3A; }
+
+/* 작품 설명표 (미술관 캡션처럼) */
+.placard { width: 92%; background: #FDFBF6; color: #2A2A2A; border-radius: 3px; padding: 12px 16px; box-shadow: 0 2px 6px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 3px; text-align: left; border-top: 3px solid #C9A45C; }
+.placard .pl-rank { font-size: 14px; font-weight: 700; }
+.pl-rank.gold { color: #9A7414; } .pl-rank.silver { color: #5E666D; } .pl-rank.bronze { color: #8A4E22; } .pl-rank.wood { color: #6E4A2E; } .pl-rank.white { color: #555; }
+.placard .pl-title { font-size: 19px; }
+.placard .pl-artist { font-size: 16px; color: #3A3A3A; }
+.placard .pl-meta, .placard .pl-date { font-size: 14px; color: #6A6A6A; }
+
+.gallery-bar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin: 24px 0 40px; }
+.gl-label { font-size: 19px; min-width: 200px; text-align: center; }
+.prize-guide { margin-top: 50px; }
+.prize-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.prize { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 14px 8px; border-radius: 16px; font-size: 14px; color: var(--ink-2); background: var(--paper); border: 1px solid var(--line); }
+.prize .fa-solid { font-size: 28px; }
+.prize b { font-size: 18px; color: var(--ink); }
+.prize.gold .fa-solid { color: #D4A72C; } .prize.silver .fa-solid { color: #9CA3AA; } .prize.bronze .fa-solid { color: #B8733E; } .prize.wood .fa-solid { color: #7A5534; } .prize.white .fa-solid { color: #9A9A9A; }
+
+/* 내 트로피 */
+.trophies { margin-bottom: 26px; }
+.trophy-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.trophy { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); }
+.trophy .fa-solid { font-size: 30px; margin-bottom: 4px; }
+.trophy b { font-size: 16px; } .trophy span { font-size: 16px; } .trophy small { font-size: 14px; color: var(--ink-3); }
+.trophy.gold .fa-solid { color: #D4A72C; } .trophy.silver .fa-solid { color: #9CA3AA; } .trophy.bronze .fa-solid { color: #B8733E; } .trophy.wood .fa-solid { color: #7A5534; } .trophy.white .fa-solid { color: #9A9A9A; }
+
+/* 완성 축하 창의 순위 */
+.done-rank { border-radius: 18px; padding: 14px 18px; margin-bottom: 16px; text-align: center; background: var(--paper-2); }
+.done-rank.top { background: linear-gradient(135deg, #FFF3C4, #F1D06E); color: #4A3407; }
+.done-rank b { display: block; font-size: 24px; }
+
+@media (max-width: 960px) {
+  .hall { grid-template-columns: repeat(2, 1fr); }
+  .exhibit.big { grid-column: 1 / -1; grid-row: auto; }
+  .prize-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px) {
+  .hall { grid-template-columns: 1fr; }
+  .prize-row { grid-template-columns: repeat(2, 1fr); }
+}

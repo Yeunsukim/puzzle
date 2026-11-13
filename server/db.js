@@ -52,6 +52,10 @@ CREATE TABLE IF NOT EXISTS invites (
 );
 CREATE INDEX IF NOT EXISTS invites_to ON invites(to_id, status);
 CREATE TABLE IF NOT EXISTS saved_games (user_id INTEGER NOT NULL, room_code TEXT NOT NULL, saved_at BIGINT NOT NULL, PRIMARY KEY (user_id, room_code));
+CREATE TABLE IF NOT EXISTS awards (period_key TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, rank INTEGER NOT NULL, room_code TEXT NOT NULL, uid INTEGER NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, score INTEGER NOT NULL, created BIGINT NOT NULL, PRIMARY KEY (period_key, room_code, uid));
+CREATE TABLE IF NOT EXISTS award_periods (period_key TEXT PRIMARY KEY, created BIGINT NOT NULL);
+CREATE INDEX IF NOT EXISTS awards_uid ON awards(uid);
+CREATE INDEX IF NOT EXISTS rooms_finished ON rooms(finished);
 `;
 
 const SQLITE_SCHEMA = `
@@ -86,6 +90,10 @@ CREATE TABLE IF NOT EXISTS invites (
 );
 CREATE INDEX IF NOT EXISTS invites_to ON invites(to_id, status);
 CREATE TABLE IF NOT EXISTS saved_games (user_id INTEGER NOT NULL, room_code TEXT NOT NULL, saved_at INTEGER NOT NULL, PRIMARY KEY (user_id, room_code));
+CREATE TABLE IF NOT EXISTS awards (period_key TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, rank INTEGER NOT NULL, room_code TEXT NOT NULL, uid INTEGER NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, score INTEGER NOT NULL, created INTEGER NOT NULL, PRIMARY KEY (period_key, room_code, uid));
+CREATE TABLE IF NOT EXISTS award_periods (period_key TEXT PRIMARY KEY, created INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS awards_uid ON awards(uid);
+CREATE INDEX IF NOT EXISTS rooms_finished ON rooms(finished);
 `;
 
 async function openPostgres() {
