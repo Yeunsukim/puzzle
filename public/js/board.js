@@ -348,7 +348,7 @@ export class Board {
         // 조각을 빠르게 두 번 누르면: 흰 테두리로 고르고 메뉴는 닫는다 (바로 끌어 옮기기 좋게)
         const now = performance.now(), last = this.lastTap;
         this.lastTap = { id: ptr.piece, t: now };
-        if (last && last.id === ptr.piece && now - last.t < 450) {
+        if (last && last.id === ptr.piece && now - last.t < 700) {
           this.lastTap = null;
           this.o.onDoubleClickPiece?.(ptr.piece);
         } else this.o.onClickPiece(ptr.piece, { x: e.clientX, y: e.clientY });
