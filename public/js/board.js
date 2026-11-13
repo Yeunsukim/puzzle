@@ -60,6 +60,7 @@ export class Board {
       const w = this.toWorld(e.clientX, e.clientY);
       const p = this.pieceAt(w.x, w.y);
       if (!p || (p.held && p.held !== this.me)) return;
+      if (performance.now() - (this.dblAt || 0) < 1500) return; // 누르는 순간 이미 처리했으면 넘어간다
       this.tapWorld = w;
       this.lastTap = null;
       this.o.onDoubleClickPiece?.(p.id);
@@ -271,6 +272,16 @@ export class Board {
     const free = p && (!p.held || p.held === this.me);
     this.ptr = { id: e.pointerId, touch, sx: e.clientX, sy: e.clientY, cx: e.clientX, cy: e.clientY, piece: free ? p.id : -1, moved: false, cam: { ...this.cam } };
     this.o.onPress?.();
+    // 눌렀다 뗐다 → 다시 '누르는 순간': 바로 잡았다(흔들기 + 흰 테두리 + 크기). 손을 떼지 않고 그대로 끌 수 있다.
+    const last = this.lastTap;
+    if (free && last && last.id === p.id && performance.now() - last.t < 1000) {
+      this.lastTap = null;
+      this.ptr.dbl = true;
+      this.dblAt = performance.now();
+      this.tapWorld = w;
+      this.o.onDoubleClickPiece?.(p.id);
+      this.shake(p.id);
+    }
   }
 
   startPinch() {
@@ -352,7 +363,7 @@ export class Board {
       if (dist < SMALL_DRAG) {
         // 아주 조금만 움직였다 놓음: 끌기가 아니라 '누르기'로 본다 (손이 흔들려도 되게)
         this.tapWorld = this.toWorld(e.clientX, e.clientY);
-        this.tap(p.id, e);
+        if (!ptr.dbl) this.tap(p.id, e);
       } else if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
     } else if (!ptr.moved && !cancelled) {
       this.tapWorld = this.toWorld(e.clientX, e.clientY); // 누른 곳 (틀 안팎 판단용)
@@ -363,7 +374,7 @@ export class Board {
         this.moveMode = -1;
         this.o.onTapMove?.(id, w.x - this.S / 2, w.y - this.S / 2);
       } else if (ptr.piece >= 0) {
-        this.tap(ptr.piece, e);
+        if (!ptr.dbl) this.tap(ptr.piece, e); // 이미 '잡았다'로 처리한 두 번째 누르기면 메뉴를 다시 띄우지 않는다
       }
       else this.o.onClickEmpty?.();
     }
