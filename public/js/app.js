@@ -3,6 +3,7 @@
 import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal, getTheme, setTheme, isDark, VERSION } from './util.js';
 import { openRoom } from './game.js';
 import { piecePath, pieceDirs } from './jigsaw.js';
+import { renderArtwork, downloadCanvas } from './artwork.js';
 
 const app = $('#app');
 let me = null;
@@ -491,6 +492,22 @@ async function renderHome() {
   drawSocial();
   refreshSocial();
 
+  // 내가 완성한 그림이 있으면 첫 화면 오른쪽 그림 카드를 그걸로 바꾼다 (최근 것 4장, 조각 선 + 서명)
+  api('/api/records').then(async d => {
+    const recs = d.records.slice(0, 4);
+    if (!recs.length) return;
+    const cards = $$('.hero-in .fan .pc');
+    for (let i = 0; i < recs.length && i < cards.length; i++) {
+      try {
+        const cv = await renderArtwork(recs[i], d.me || me.nick, 900);
+        const card = cards[cards.length - 1 - i]; // 맨 앞(오른쪽)에 가장 최근 그림이 오도록
+        if (!card?.isConnected) return;
+        card.style.backgroundImage = `url('${cv.toDataURL('image/jpeg', 0.88)}')`;
+        card.style.aspectRatio = `${cv.width} / ${cv.height}`; // 서명이 잘리지 않게 그림 모양 그대로
+      } catch { /* 그대로 둔다 */ }
+    }
+  }).catch(() => {});
+
   api('/api/saved').then(d => {
     if (!d.games.length || !$('#home-saved')) return;
     $('#home-saved').innerHTML = d.games.slice(0, 3).map(savedCard).join('');
@@ -796,8 +813,8 @@ async function renderSaved() {
 // ---------------- 내 기록 ----------------
 async function renderRecords() {
   shell(`<main class="page"><div class="page-title"><span class="eyebrow">기록</span><h2 style="margin-top:10px">내가 완성한 퍼즐</h2></div><p class="muted">기록을 불러오는 중...</p></main>`);
-  let records;
-  try { records = (await api('/api/records')).records; } catch (err) { toast(err.message); return; }
+  let records, myNick = me.nick;
+  try { const d = await api('/api/records'); records = d.records; myNick = d.me || me.nick; } catch (err) { toast(err.message); return; }
   const total = records.length, pieces = records.reduce((a, r) => a + r.placed, 0);
   const best = records.reduce((m, r) => Math.max(m, r.pieces), 0);
   $('main', app).innerHTML = `
@@ -807,9 +824,9 @@ async function renderRecords() {
       <div><b>${pieces}개</b>내가 맞춘 조각</div>
       <div><b>${best ? best + '조각' : '-'}</b>가장 큰 퍼즐</div>
     </div>
-    ${total ? `<div class="rec-list">${records.map(r => `
+    ${total ? `<div class="rec-list">${records.map((r, i) => `
       <div class="rec">
-        <div class="thumb" style="background-image:url('${esc(r.url)}')"></div>
+        <button class="art-thumb" data-view="${i}" aria-label="${esc(r.title)} 완성 그림 크게 보기"><canvas></canvas><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> 크게 보기</span></button>
         <div>
           <h3>${esc(r.title)}</h3>
           <div class="facts">
@@ -819,9 +836,67 @@ async function renderRecords() {
           </div>
           <p class="muted" style="margin-top:6px">${new Date(r.finished).toLocaleString('ko-KR', { dateStyle: 'long', timeStyle: 'short' })}
           ${r.friends.length ? ` · 함께한 친구: ${r.friends.map(esc).join(', ')}` : ' · 혼자서 완성'}</p>
+          <div class="row" style="margin-top:12px">
+            <button class="btn small" data-view="${i}"><i class="fa-solid fa-expand" aria-hidden="true"></i> 크게 보기</button>
+            <button class="btn line small" data-save="${i}"><i class="fa-solid fa-download" aria-hidden="true"></i> 그림 저장하기</button>
+          </div>
         </div>
       </div>`).join('')}</div>`
     : `<div class="card empty"><img src="/assets/logo.svg" alt=""><h3>아직 완성한 퍼즐이 없어요</h3><p class="muted" style="margin:8px 0 22px">첫 퍼즐을 맞춰 볼까요?</p><a class="btn big" href="#/start">퍼즐 시작하기</a></div>`}`;
+
+  // 작은 그림부터 하나씩 그린다 (조각 선 + 서명)
+  const thumbs = $$('.art-thumb canvas', app);
+  (async () => {
+    for (let i = 0; i < thumbs.length; i++) {
+      try {
+        const cv = await renderArtwork(records[i], myNick, 600);
+        const t = thumbs[i];
+        if (!t.isConnected) return;
+        t.width = cv.width; t.height = cv.height;
+        t.getContext('2d').drawImage(cv, 0, 0);
+      } catch { /* 그림을 못 불러오면 비워 둔다 */ }
+    }
+  })();
+  $$('[data-view]', app).forEach(b => b.addEventListener('click', () => viewArtwork(records[Number(b.dataset.view)], myNick)));
+  $$('[data-save]', app).forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true;
+    try {
+      const r = records[Number(b.dataset.save)];
+      downloadCanvas(await renderArtwork(r, myNick, 2400), r);
+      toast('그림을 저장했어요. 다운로드 폴더를 확인해 주세요.');
+    } catch { toast('그림을 만들지 못했어요. 다시 눌러 주세요.'); }
+    finally { b.disabled = false; }
+  }));
+}
+
+// 완성 그림 크게 보기: 크게·작게 단추, 저장하기, 닫기
+export async function viewArtwork(rec, nick) {
+  const bg = document.createElement('div');
+  bg.className = 'art-viewer';
+  bg.innerHTML = `
+    <div class="av-bar">
+      <b>${esc(rec.title)}</b>
+      <button class="btn light small" id="av-in"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> 크게</button>
+      <button class="btn light small" id="av-out"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i> 작게</button>
+      <button class="btn teal small" id="av-save"><i class="fa-solid fa-download" aria-hidden="true"></i> 저장하기</button>
+      <button class="btn paper small" id="av-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 닫기</button>
+    </div>
+    <div class="av-stage"><p class="av-wait">그림을 준비하는 중...</p></div>`;
+  document.body.appendChild(bg);
+  $('#av-close', bg).addEventListener('click', () => bg.parentNode && bg.parentNode.removeChild(bg));
+  let cv;
+  try { cv = await renderArtwork(rec, nick, 2400); } catch { $('.av-wait', bg).textContent = '그림을 불러오지 못했어요.'; return; }
+  const img = document.createElement('img');
+  img.src = cv.toDataURL('image/jpeg', 0.92);
+  img.alt = `${rec.title} 완성 그림`;
+  const stage = $('.av-stage', bg);
+  stage.innerHTML = '';
+  stage.appendChild(img);
+  let zoom = 1;
+  const apply = () => { img.style.width = zoom === 1 ? '' : Math.round(stage.clientWidth * zoom) + 'px'; img.classList.toggle('zoomed', zoom > 1); };
+  $('#av-in', bg).addEventListener('click', () => { zoom = Math.min(4, zoom * 1.5); apply(); });
+  $('#av-out', bg).addEventListener('click', () => { zoom = Math.max(1, zoom / 1.5); apply(); });
+  $('#av-save', bg).addEventListener('click', () => { downloadCanvas(cv, rec); toast('그림을 저장했어요. 다운로드 폴더를 확인해 주세요.'); });
 }
 
 // ---------------- 시작 ----------------

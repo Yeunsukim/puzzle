@@ -117,8 +117,15 @@ app.post('/api/saved/remove', requireUser, ah(async (req, res) => {
 
 // ---- 내 기록 ----
 app.get('/api/records', requireUser, ah(async (req, res) => {
-  const rows = await db.all('SELECT * FROM records WHERE user_id = ? ORDER BY finished DESC LIMIT 200', req.user.id);
-  res.json({ records: rows.map(r => ({ ...r, friends: JSON.parse(r.friends) })) });
+  // 완성 그림을 다시 그릴 수 있도록 칸 수·조각 모양(볼록·오목)·그림 크기도 함께 보낸다
+  const rows = await db.all(`SELECT r.*, rm.cols, rm.rows, rm.state, p.w, p.h FROM records r
+    LEFT JOIN rooms rm ON rm.code = r.room_code LEFT JOIN pictures p ON p.id = r.picture_id
+    WHERE r.user_id = ? ORDER BY r.finished DESC LIMIT 200`, req.user.id);
+  res.json({ me: req.user.nick, records: rows.map(({ state, ...r }) => {
+    let edges = null;
+    try { edges = JSON.parse(state || 'null')?.edges || null; } catch { /* 없으면 보기용 무늬 */ }
+    return { ...r, edges, friends: JSON.parse(r.friends) };
+  }) });
 }));
 
 app.use('/api', (_req, res) => res.status(404).json({ error: '없는 주소예요.' }));
