@@ -32,10 +32,10 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <canvas id="board" aria-label="퍼즐판"></canvas>
       <div class="side-mini" id="g-unfold-box">
         <button class="menu-btn" id="g-menu-open2" aria-label="메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><small>메뉴</small></button>
-        <button class="btn light" id="g-exit2"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 나가기</button>
-        <button class="btn light" id="g-unfold" aria-label="정보판 펼치기"><i class="fa-solid fa-angles-right" aria-hidden="true"></i> 정보판</button>
-        <button class="btn teal" id="g-invite2"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 부르기</button>
-        <button class="btn light mic-mini" id="v-toggle2" aria-label="음성 대화 켜기"><i class="fa-solid fa-microphone" aria-hidden="true"></i> 켜기</button>
+        <button class="btn light" id="g-exit2" aria-label="나가기" title="나가기"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 나가기</button>
+        <button class="btn light" id="g-unfold" aria-label="정보판 펼치기" title="정보판 펼치기"><i class="fa-solid fa-angles-right" aria-hidden="true"></i> 정보판</button>
+        <button class="btn teal" id="g-invite2" aria-label="친구 부르기" title="친구 부르기"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 부르기</button>
+        <button class="btn light mic-mini" id="v-toggle2" aria-label="음성 대화 켜고 끄기" title="음성 대화 켜고 끄기"><i class="fa-solid fa-microphone" aria-hidden="true"></i> 켜기</button>
         <span class="mini-stat" id="g-mini-stat"></span>
       </div>
       <div class="zoom">

@@ -584,3 +584,38 @@ button, input, select { font: inherit; color: inherit; }
 .v-st.ok { background: #DDF3E6; color: #1C7A4B; }
 .v-st.wait { background: var(--note-bg); color: var(--ink-2); }
 .v-st.fail { background: var(--danger-bg); color: var(--danger); }
+
+/* ---- 휴대폰 게임 화면: 단추를 아이콘만 보이는 작은 단추로 ---- */
+@media (max-width: 760px) {
+  .side-mini { left: 8px; top: 8px; gap: 6px; max-width: calc(100% - 70px); }
+  .side-mini .btn, .side-mini .menu-btn {
+    width: 46px; height: 46px; min-height: 46px; padding: 0; border-radius: 14px;
+    font-size: 0; gap: 0; justify-content: center;
+  }
+  .side-mini .btn .fa-solid, .side-mini .menu-btn .fa-bars { font-size: 19px; margin: 0; }
+  .side-mini .menu-btn small { display: none; }
+  .mini-stat { font-size: 13px; padding: 5px 10px; }
+  .zoom { right: 8px; top: 8px; gap: 6px; }
+  .zbtn { width: 46px; min-height: 46px; height: 46px; border-radius: 14px; padding: 0; }
+  .zbtn small { display: none; }
+  .zbtn .fa-solid { font-size: 19px; }
+  .mini { width: 92px; right: 8px; bottom: 8px; padding: 5px; }
+  .mini span { display: none; }
+  .piece-menu { width: 220px; }
+}
+@media (max-width: 760px) {
+  .side-top { gap: 6px; }
+  .side-top .btn, .side-top .menu-btn {
+    width: 46px; height: 46px; min-height: 46px; padding: 0; border-radius: 14px;
+    font-size: 0; gap: 0; justify-content: center; flex: 0 0 auto;
+  }
+  .side-top .btn .fa-solid, .side-top .menu-btn .fa-bars { font-size: 19px; margin: 0; }
+  .side-top .menu-btn small { display: none; }
+  .side { padding: 8px 10px; gap: 6px 12px; }
+  .side .voice-box { padding: 8px; gap: 6px; }
+  .voice-btn, .voice-box .btn.light { min-height: 46px; font-size: 16px; padding: 0 14px; }
+  .voice-note { font-size: 13px; }
+  #g-invite { min-height: 46px; font-size: 16px; padding: 0 16px; }
+  .info-val { font-size: 20px; }
+  .info-val.time { font-size: 22px; }
+}
