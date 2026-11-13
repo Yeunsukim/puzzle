@@ -205,7 +205,7 @@ export class Board {
     // 고른 조각은 1.5배로 크게 그려져 있으니 그 크기대로 먼저 확인
     const sel = this.pieces[this.selected];
     if (sel && !sel.locked) {
-      const sk = this.inFrame(sel) ? 1 : 1.5;
+      const sk = this.selBig ? 1.5 : 1;
       const dx = (wx - (sel.x + half)) / sk, dy = (wy - (sel.y + half)) / sk;
       const a = -sel.rot * Math.PI / 2;
       const lx = dx * Math.cos(a) - dy * Math.sin(a) + half;
@@ -303,7 +303,11 @@ export class Board {
       }
     }
     if (!this.ptr.moved) return;
-    if (this.drag) this.dragTo(w);
+    if (this.drag) {
+      // 고른 조각을 끄는 중: 마우스가 틀 밖이면 1.5배, 틀 안이면 원래 크기
+      if (this.drag.id === this.selected) this.selBig = !this.inFrameAt(w.x, w.y);
+      this.dragTo(w);
+    }
     else {
       this.cam.x = this.ptr.cam.x - (e.clientX - this.ptr.sx) / this.cam.z;
       this.cam.y = this.ptr.cam.y - (e.clientY - this.ptr.sy) / this.cam.z;
@@ -330,8 +334,10 @@ export class Board {
     if (this.drag) {
       const p = this.pieces[this.drag.id];
       this.drag = null;
+      if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
       this.o.onDrop(p.id, p.x, p.y);
     } else if (!ptr.moved && !cancelled) {
+      this.tapWorld = this.toWorld(e.clientX, e.clientY); // 누른 곳 (틀 안팎 판단용)
       // '놓을 곳 누르기' 중이면 누른 곳으로 조각을 옮긴다
       if (this.moveMode >= 0) {
         const w = this.toWorld(e.clientX, e.clientY);
@@ -339,10 +345,10 @@ export class Board {
         this.moveMode = -1;
         this.o.onTapMove?.(id, w.x - this.S / 2, w.y - this.S / 2);
       } else if (ptr.piece >= 0) {
-        // 틀 밖 조각을 빠르게 두 번 누르면: 골라서 크게 보여 주고 메뉴는 닫는다 (바로 끌어 옮기기 좋게)
+        // 조각을 빠르게 두 번 누르면: 흰 테두리로 고르고 메뉴는 닫는다 (바로 끌어 옮기기 좋게)
         const now = performance.now(), last = this.lastTap;
         this.lastTap = { id: ptr.piece, t: now };
-        if (last && last.id === ptr.piece && now - last.t < 450 && !this.inFrame(this.pieces[ptr.piece])) {
+        if (last && last.id === ptr.piece && now - last.t < 450) {
           this.lastTap = null;
           this.o.onDoubleClickPiece?.(ptr.piece);
         } else this.o.onClickPiece(ptr.piece, { x: e.clientX, y: e.clientY });
@@ -355,7 +361,18 @@ export class Board {
   setMoveMode(id) { this.moveMode = id; this.need = true; }
 
   // 고른 조각: 1.5배 크게 + 흰 테두리로 보여 준다 (-1 이면 선택 해제)
-  setSelected(id) { this.selected = id; if (id >= 0) this.toTop(id); this.need = true; }
+  // 크기는 마우스로 누른 곳 기준: 틀 밖이면 1.5배, 틀 안이면 원래 크기
+  setSelected(id) {
+    this.selected = id;
+    if (id >= 0) {
+      this.toTop(id);
+      const p = this.pieces[id], w = this.tapWorld || { x: p.x + this.S / 2, y: p.y + this.S / 2 };
+      this.selBig = !this.inFrameAt(w.x, w.y);
+    }
+    this.need = true;
+  }
+
+  inFrameAt(wx, wy) { return wx >= 0 && wx <= this.W && wy >= 0 && wy <= this.H; }
 
   // ---- 매 화면마다 ----
   step() {
@@ -476,7 +493,7 @@ export class Board {
     const other = !p.locked && p.held && p.held !== this.me ? this.o.playerInfo(p.held) : null;
     const picked = p.id === this.selected && !p.locked;
     // 틀 밖에서는 1.5배로 크게, 틀 안으로 들어오면 흰 테두리만 남기고 원래 크기
-    const big = picked && !this.inFrame(p);
+    const big = picked && this.selBig;
     const k = big ? 1.5 : 1;
     ctx.save();
     ctx.translate(p.rx + half, p.ry + half);
