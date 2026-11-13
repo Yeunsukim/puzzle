@@ -13,6 +13,7 @@ let social = { code: '', friends: [], requests: [], sent: [], invites: [], recen
 let stats = { done: 0, placed: 0, seconds: 0 };
 let notifySocket = null;
 let currentRoom = '';
+let inviteHandler = null; // 게임방에 있을 때 '친구 부르기' 창을 여는 함수
 const socialListeners = new Set();
 
 const ART = ['/assets/art/blue-garden.svg', '/assets/art/moon-waves.svg', '/assets/art/bouquet.svg', '/assets/art/blue-tiles.svg'];
@@ -59,7 +60,7 @@ async function route() {
     case 'saved': return renderSaved();
     case 'room':
       currentRoom = arg.toUpperCase();
-      cleanup = await openRoom(app, currentRoom, { me, config, go, openDrawer, getSocial: () => social, onSocial: fn => socialListeners.add(fn), inviteLink, setLeaveGuard });
+      cleanup = await openRoom(app, currentRoom, { me, config, go, openDrawer, getSocial: () => social, onSocial: fn => socialListeners.add(fn), inviteLink, setLeaveGuard, setInviteHandler: fn => { inviteHandler = fn; } });
       updateBadges();
       return;
     default: return renderHome();
@@ -249,6 +250,7 @@ function renderDrawer() {
     ${alerts ? `<div class="drawer-sec"><h4>새 알림 ${alerts}개</h4>${noteCards('invites')}${noteCards('requests')}</div>` : ''}
     <div class="drawer-sec"><h4>메뉴</h4><nav class="nav-list">
       ${item('#/home', 'house', '홈', 'home')}
+      <button class="nav-item" id="d-invite"><span class="ic"><i class="fa-solid fa-user-plus" aria-hidden="true"></i></span>친구 부르기</button>
       ${item('#/start', 'puzzle-piece', '퍼즐 시작하기', 'start')}
       ${item('#/saved', 'clock-rotate-left', '하던 퍼즐 이어하기', 'saved')}
       ${item('#/create', 'image', '내 사진으로 만들기', 'create')}
@@ -267,6 +269,12 @@ function renderDrawer() {
     </div>
     <div class="drawer-foot"><button class="btn line wide" id="d-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 로그아웃</button><p class="muted center" style="font-size:15px;margin-top:12px">버전: ${VERSION}</p></div>`;
   $('#d-close', drawer).addEventListener('click', closeDrawer);
+  $('#d-invite', drawer).addEventListener('click', () => {
+    closeDrawer();
+    if (inviteHandler) inviteHandler();
+    else openModal(`<h2>친구 부르기</h2><p class="muted" style="margin:8px 0 20px">친구는 <b>퍼즐 방 안에서</b> 부를 수 있어요. 먼저 퍼즐을 고르고 방을 만들어 주세요. 방에 들어가면 위쪽의 <b>"친구 부르기"</b> 단추나 이 메뉴로 부를 수 있어요.</p>
+      <div class="stack"><a class="btn big wide" href="#/start" data-close><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 퍼즐 방 만들러 가기</a><a class="btn line wide" href="#/saved" data-close><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> 하던 퍼즐에서 부르기</a><button class="btn light wide" data-close>닫기</button></div>`);
+  });
   const markTheme = () => $$('#d-theme button', drawer).forEach(b => b.classList.toggle('on', b.dataset.t === getTheme()));
   markTheme();
   $$('#d-theme button', drawer).forEach(b => b.addEventListener('click', () => { setTheme(b.dataset.t); markTheme(); }));
@@ -748,17 +756,51 @@ function renderFriends() {
   $('#fr-q').addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
   $('#fr-copy').addEventListener('click', async () => toast(await copyText(social.code) ? '친구 코드를 복사했어요.' : '복사가 안 됐어요. 코드를 직접 알려 주세요.'));
 
+  const frPicked = new Set(); // 친구 목록에서 고른 친구들
   const personRow = (p, right, sub) => `<div class="person"><div class="av"><img src="${avatarUrl(p.avatar)}" alt=""><span class="dot ${p.online ? 'on' : ''}"></span></div>
     <div class="nm">${esc(p.nick)}<small>${sub ?? (p.online ? '지금 접속 중' : '쉬는 중')}</small></div>${right}</div>`;
   const draw = () => {
     $('#fr-code').textContent = social.code;
     let h = '';
     if (social.requests.length) h += `<div class="card"><h3 style="margin-bottom:12px">받은 친구 신청</h3>${noteCards('requests')}</div>`;
+    for (const id of [...frPicked]) if (!social.friends.some(x => x.id === id)) frPicked.delete(id);
+    const fr = [...social.friends].sort((a, b) => (b.online - a.online) || a.nick.localeCompare(b.nick));
     h += `<div class="card"><h3 style="margin-bottom:6px">내 친구 ${social.friends.length}명</h3>
-      ${social.friends.length ? social.friends.map(f => personRow(f, `<button class="btn danger" data-act="friend-remove" data-id="${f.id}"><i class="fa-solid fa-user-minus" aria-hidden="true"></i> 빼기</button>`)).join('') : '<p class="muted" style="padding:10px 0">아직 친구가 없어요. 왼쪽에서 친구를 추가해 보세요.</p>'}</div>`;
+      ${fr.length ? `<p class="muted" style="margin-bottom:12px;font-size:17px">친구를 눌러서 고른 다음, 아래 단추를 눌러 주세요.</p>
+        <div class="pick-list">${fr.map(f => `<button class="pick-row ${frPicked.has(f.id) ? 'on' : ''}" data-frpick="${f.id}" aria-pressed="${frPicked.has(f.id)}">
+          <span class="ck"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+          <span class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></span>
+          <span class="nm">${esc(f.nick)}<small>${f.online ? '지금 접속 중' : '쉬는 중'}</small></span></button>`).join('')}</div>
+        <div class="pick-bar">
+          <button class="btn" id="fr-invite" ${frPicked.size ? '' : 'disabled'}><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 고른 친구 부르기</button>
+          <button class="btn danger" id="fr-remove" ${frPicked.size ? '' : 'disabled'}><i class="fa-solid fa-user-minus" aria-hidden="true"></i> 고른 친구 빼기${frPicked.size ? ` (${frPicked.size}명)` : ''}</button>
+        </div>`
+      : '<p class="muted" style="padding:10px 0">아직 친구가 없어요. 왼쪽에서 친구를 추가해 보세요.</p>'}</div>`;
     if (social.sent.length) h += `<div class="card"><h3 style="margin-bottom:6px">수락을 기다리는 신청</h3>${social.sent.map(s => personRow(s.to, `<button class="btn line" data-act="req-cancel" data-id="${s.id}"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 신청 취소</button>`, '수락을 기다리는 중')).join('')}</div>`;
     if (social.recent.length) h += `<div class="card"><h3 style="margin-bottom:6px">같이 퍼즐을 맞췄던 사람</h3>${social.recent.map(p => personRow(p, social.sent.some(s => s.to.id === p.id) ? '<span class="muted">신청함</span>' : `<button class="btn teal" data-act="friend-add" data-id="${p.id}"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 신청</button>`)).join('')}</div>`;
     $('#fr-lists').innerHTML = h;
+    $$('[data-frpick]').forEach(b => b.addEventListener('click', () => {
+      const id = Number(b.dataset.frpick);
+      if (frPicked.has(id)) frPicked.delete(id); else frPicked.add(id);
+      draw();
+    }));
+    $('#fr-remove')?.addEventListener('click', () => {
+      const names = social.friends.filter(x => frPicked.has(x.id)).map(x => x.nick);
+      const m = openModal(`<h2>${names.length}명을 친구에서 뺄까요?</h2><p class="muted" style="margin:6px 0">${names.map(esc).join(', ')}</p><p class="muted">다시 친구 신청을 하면 언제든 친구가 될 수 있어요.</p><div class="spacer"></div>
+        <div class="stack"><button class="btn danger wide" id="rm-yes"><i class="fa-solid fa-user-minus" aria-hidden="true"></i> 친구에서 빼기</button><button class="btn light wide" data-close>그대로 두기</button></div>`);
+      $('#rm-yes', m).addEventListener('click', async () => {
+        m.close();
+        for (const id of [...frPicked]) await api('/api/friends/remove', { id }).catch(err => toast(err.message));
+        frPicked.clear();
+        toast('친구에서 뺐어요.');
+        await refreshSocial();
+      });
+    });
+    $('#fr-invite')?.addEventListener('click', () => {
+      // 퍼즐 방에서만 부를 수 있으니, 고른 친구를 기억해 두고 방을 만들러 간다
+      openModal(`<h2>친구 부르기</h2><p class="muted" style="margin:8px 0 20px">친구는 <b>퍼즐 방 안에서</b> 불러요. 방을 만들거나 하던 퍼즐에 들어간 뒤, 위쪽의 <b>"친구 부르기"</b> 단추를 눌러 주세요.</p>
+        <div class="stack"><a class="btn big wide" href="#/start" data-close><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 퍼즐 방 만들러 가기</a><a class="btn line wide" href="#/saved" data-close><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> 하던 퍼즐로 가기</a><button class="btn light wide" data-close>닫기</button></div>`);
+    });
   };
   socialListeners.add(draw);
   draw();

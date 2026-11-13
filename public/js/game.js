@@ -3,7 +3,7 @@ import { $, $$, esc, api, toast, avatarUrl, cropRect, clock, fmtTime, loadImage,
 import { Board } from './board.js';
 import { Voice } from './voice.js';
 
-export async function openRoom(root, code, { me, config, go, openDrawer, getSocial, onSocial, inviteLink, setLeaveGuard }) {
+export async function openRoom(root, code, { me, config, go, openDrawer, getSocial, onSocial, inviteLink, setLeaveGuard, setInviteHandler }) {
   root.innerHTML = `
   <div class="game">
     <aside class="side">
@@ -26,7 +26,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         <button class="btn light" id="v-mute" hidden><i class="fa-solid fa-microphone-slash" aria-hidden="true"></i> 내 마이크 잠깐 끄기</button>
         <p class="voice-note" id="v-note">마이크는 꺼져 있어요.</p>
       </div>
-      <button class="btn teal" id="g-invite"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 초대하기</button>
+      <button class="btn teal" id="g-invite"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 부르기</button>
     </aside>
     <main class="stage" id="stage">
       <canvas id="board" aria-label="퍼즐판"></canvas>
@@ -34,6 +34,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         <button class="menu-btn" id="g-menu-open2" aria-label="메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><small>메뉴</small></button>
         <button class="btn light" id="g-exit2"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 나가기</button>
         <button class="btn light" id="g-unfold" aria-label="정보판 펼치기"><i class="fa-solid fa-angles-right" aria-hidden="true"></i> 정보판</button>
+        <button class="btn teal" id="g-invite2"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 부르기</button>
         <button class="btn light mic-mini" id="v-toggle2" aria-label="음성 대화 켜기"><i class="fa-solid fa-microphone" aria-hidden="true"></i> 켜기</button>
         <span class="mini-stat" id="g-mini-stat"></span>
       </div>
@@ -379,55 +380,78 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
 
   // ---- 친구 초대 ----
   const sentTo = new Set();
-  $('#g-invite').addEventListener('click', () => {
+  // 친구 부르기 창: 친구를 골라서(여러 명) 한 번에 부른다. 받은 친구가 수락하면 이 방으로 자동으로 들어온다.
+  const openInvite = () => {
     const link = inviteLink(code);
     const lanOnly = !config.publicUrl && /^http:\/\/(10\.|192\.168\.|172\.|localhost|127\.)/.test(link);
+    const picked = new Set();
     const bg = modal(`
       <span class="eyebrow">함께하기</span>
-      <h2 style="margin-top:10px">친구 초대하기</h2>
-      <p class="muted" style="margin-bottom:16px">초대를 보내면 친구 화면에 알림이 떠요. 친구가 <b>수락</b>하면 이 방으로 들어와요. (한 방에 6명까지)</p>
-      <div class="card" style="padding:8px 20px" id="inv-friends"></div>
-      <div class="spacer"></div>
-      <h3 style="margin-bottom:8px">아직 친구가 아닌 사람에게는</h3>
-      <p class="muted" style="margin-bottom:12px">이 링크를 문자나 카카오톡으로 보내 주세요. 가입하고 바로 들어올 수 있어요.</p>
-      <div class="link-box">${esc(link)}</div>
-      <div class="spacer" style="height:12px"></div>
-      <button class="btn line wide" id="inv-copy"><i class="fa-solid fa-link" aria-hidden="true"></i> 링크 복사하기</button>
-      <p class="center muted" style="margin-top:18px">방 번호</p>
-      <div class="room-code">${code}</div>
-      ${lanOnly ? `<div class="spacer"></div><div class="note">지금은 이 컴퓨터에서 서버를 켜 둔 상태라, 링크로는 <b>같은 와이파이</b>에 있는 사람만 들어올 수 있어요. 멀리 있는 친구도 들어오게 하려면 사이트를 인터넷에 열어야 해요.</div>` : ''}
+      <h2 style="margin-top:10px">친구 부르기</h2>
+      <p class="muted" style="margin-bottom:16px">부를 친구를 눌러서 고른 다음 <b>"부르기"</b>를 눌러 주세요. 친구가 <b>수락</b>하면 이 방으로 바로 들어와요. (한 방에 6명까지)</p>
+      <div class="pick-list" id="inv-friends"></div>
+      <button class="btn big wide" id="inv-send" disabled style="margin-top:14px"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> <span>친구를 골라 주세요</span></button>
+      <details class="more-way" style="margin-top:22px">
+        <summary>아직 친구가 아닌 사람 부르기 (링크 · 방 번호)</summary>
+        <p class="muted" style="margin:10px 0 12px">이 링크를 문자나 카카오톡으로 보내 주세요. 가입하고 바로 들어올 수 있어요.</p>
+        <div class="link-box">${esc(link)}</div>
+        <div class="spacer" style="height:12px"></div>
+        <button class="btn line wide" id="inv-copy"><i class="fa-solid fa-link" aria-hidden="true"></i> 링크 복사하기</button>
+        <p class="center muted" style="margin-top:18px">방 번호</p>
+        <div class="room-code">${code}</div>
+        ${lanOnly ? '<div class="spacer"></div><div class="note">지금은 이 컴퓨터에서 서버를 켜 둔 상태라, 링크로는 <b>같은 와이파이</b>에 있는 사람만 들어올 수 있어요.</div>' : ''}
+      </details>
       <div class="spacer"></div>
       <button class="btn light wide" data-close>닫기</button>`);
     const drawFriends = () => {
       const el = $('#inv-friends', bg);
       if (!el) return;
       const here = new Set(state.players.online.map(o => o.uid));
-      const fr = getSocial().friends;
-      el.innerHTML = fr.length ? fr.map(f => `
-        <div class="person"><div class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></div>
-          <div class="nm">${esc(f.nick)}<small>${here.has(f.id) ? '이 방에 있어요' : f.online ? '지금 접속 중' : '쉬는 중 · 다음에 들어오면 알림이 보여요'}</small></div>
-          ${here.has(f.id) ? '<span class="muted">함께하는 중</span>'
-            : sentTo.has(f.id) ? `<button class="btn line" data-inv="${f.id}"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> 다시 보내기</button>`
-            : `<button class="btn" data-inv="${f.id}"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> 초대 보내기</button>`}
-        </div>`).join('')
+      // 접속 중인 친구를 먼저 보여 준다
+      const fr = [...getSocial().friends].sort((a, b) => (b.online - a.online) || a.nick.localeCompare(b.nick));
+      for (const id of [...picked]) if (here.has(id)) picked.delete(id);
+      el.innerHTML = fr.length ? fr.map(f => {
+        const inRoom = here.has(f.id), on = picked.has(f.id);
+        return `<button class="pick-row ${on ? 'on' : ''}" data-pick="${f.id}" ${inRoom ? 'disabled' : ''} aria-pressed="${on}">
+          <span class="ck"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+          <span class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></span>
+          <span class="nm">${esc(f.nick)}<small>${inRoom ? '이미 이 방에 있어요' : sentTo.has(f.id) ? '불렀어요 · 다시 부를 수 있어요' : f.online ? '지금 접속 중' : '쉬는 중 · 다음에 들어오면 알림이 보여요'}</small></span>
+        </button>`;
+      }).join('')
         : '<p class="muted" style="padding:14px 0">아직 친구가 없어요. 왼쪽 위 메뉴 → 친구에서 친구를 추가하거나, 아래 링크를 보내 주세요.</p>';
-      $$('[data-inv]', el).forEach(b => b.addEventListener('click', async () => {
-        b.disabled = true;
-        try {
-          const d = await api('/api/invites', { roomCode: code, to: Number(b.dataset.inv) });
-          sentTo.add(Number(b.dataset.inv));
-          toast(d.online ? '초대를 보냈어요! 친구가 수락하면 들어와요.' : '초대를 보냈어요. 친구가 사이트에 들어오면 알림이 보여요.', 4000);
-          drawFriends();
-        } catch (err) { toast(err.message); b.disabled = false; }
+      $$('[data-pick]', el).forEach(b => b.addEventListener('click', () => {
+        const id = Number(b.dataset.pick);
+        if (picked.has(id)) picked.delete(id); else picked.add(id);
+        drawFriends();
       }));
+      const send = $('#inv-send', bg);
+      send.disabled = !picked.size;
+      $('span', send).textContent = picked.size ? `고른 친구 ${picked.size}명 부르기` : '친구를 골라 주세요';
     };
+    $('#inv-send', bg).addEventListener('click', async () => {
+      const send = $('#inv-send', bg);
+      send.disabled = true;
+      let ok = 0, online = 0;
+      for (const id of [...picked]) {
+        try {
+          const d = await api('/api/invites', { roomCode: code, to: id });
+          sentTo.add(id); ok++; if (d.online) online++;
+        } catch (err) { toast(err.message); }
+      }
+      picked.clear();
+      drawFriends();
+      if (ok) toast(online === ok ? `${ok}명을 불렀어요! 친구가 수락하면 들어와요.` : `${ok}명을 불렀어요. 쉬는 중인 친구는 다음에 들어오면 알림이 보여요.`, 4500);
+    });
     drawFriends();
     onSocial(drawFriends);
     state.redrawInvite = drawFriends;
     $('#inv-copy', bg).addEventListener('click', async () => {
       toast(await copyText(link) ? '링크를 복사했어요! 친구에게 붙여 넣어 보내 주세요.' : '복사가 안 됐어요. 위 주소를 직접 알려 주세요.');
     });
-  });
+  };
+  $('#g-invite').addEventListener('click', openInvite);
+  $('#g-invite2').addEventListener('click', openInvite);
+  setInviteHandler?.(openInvite); // 왼쪽 위 메뉴의 '친구 부르기'도 이 창을 연다
 
   // ---- 완성! ----
   function showDone(sum, quiet) {
@@ -466,6 +490,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   return () => {
     state.closed = true;
     setLeaveGuard(null);
+    setInviteHandler?.(null);
     voice.stop();
     for (const m of [...modals]) m.close();
     clearInterval(state.timer);
