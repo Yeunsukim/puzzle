@@ -53,6 +53,17 @@ export class Board {
     canvas.addEventListener('pointercancel', this.onCancel);
     canvas.addEventListener('wheel', this.onWheel, { passive: false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
+    // 윈도우가 알려 주는 '두 번 누르기'도 받는다 (사람마다 누르는 속도가 달라서)
+    this.onDbl = e => {
+      e.preventDefault();
+      const w = this.toWorld(e.clientX, e.clientY);
+      const p = this.pieceAt(w.x, w.y);
+      if (!p || (p.held && p.held !== this.me)) return;
+      this.tapWorld = w;
+      this.lastTap = null;
+      this.o.onDoubleClickPiece?.(p.id);
+    };
+    canvas.addEventListener('dblclick', this.onDbl);
 
     // 밝은/어두운 화면에 맞는 퍼즐판 색 (CSS에 적어 둔 색을 읽어 온다)
     this.readTheme();
