@@ -63,6 +63,7 @@ export class Board {
       this.tapWorld = w;
       this.lastTap = null;
       this.o.onDoubleClickPiece?.(p.id);
+      this.shake(p.id);
     };
     canvas.addEventListener('dblclick', this.onDbl);
 
@@ -347,17 +348,12 @@ export class Board {
       const p = this.pieces[this.drag.id];
       this.drag = null;
       const dist = Math.hypot(e.clientX - ptr.sx, e.clientY - ptr.sy);
-      if (dist < SMALL_DRAG) {
-        // 아주 조금만 움직였다 놓음: 누르기로 본다. 두 번째 누르기였다면 '두 번 누르기'로 처리
-        const now = performance.now(), last = this.lastTap;
-        this.lastTap = { id: p.id, t: now };
-        if (last && last.id === p.id && now - last.t < 700) {
-          this.lastTap = null;
-          this.tapWorld = this.toWorld(e.clientX, e.clientY);
-          this.o.onDoubleClickPiece?.(p.id);
-        }
-      } else if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
       this.o.onDrop(p.id, p.x, p.y);
+      if (dist < SMALL_DRAG) {
+        // 아주 조금만 움직였다 놓음: 끌기가 아니라 '누르기'로 본다 (손이 흔들려도 되게)
+        this.tapWorld = this.toWorld(e.clientX, e.clientY);
+        this.tap(p.id, e);
+      } else if (this.selected === p.id) this.selected = -1; // 내려놓으면 흰 테두리를 지운다
     } else if (!ptr.moved && !cancelled) {
       this.tapWorld = this.toWorld(e.clientX, e.clientY); // 누른 곳 (틀 안팎 판단용)
       // '놓을 곳 누르기' 중이면 누른 곳으로 조각을 옮긴다
@@ -367,18 +363,26 @@ export class Board {
         this.moveMode = -1;
         this.o.onTapMove?.(id, w.x - this.S / 2, w.y - this.S / 2);
       } else if (ptr.piece >= 0) {
-        // 조각을 빠르게 두 번 누르면: 흰 테두리로 고르고 메뉴는 닫는다 (바로 끌어 옮기기 좋게)
-        const now = performance.now(), last = this.lastTap;
-        this.lastTap = { id: ptr.piece, t: now };
-        if (last && last.id === ptr.piece && now - last.t < 700) {
-          this.lastTap = null;
-          this.o.onDoubleClickPiece?.(ptr.piece);
-        } else this.o.onClickPiece(ptr.piece, { x: e.clientX, y: e.clientY });
+        this.tap(ptr.piece, e);
       }
       else this.o.onClickEmpty?.();
     }
     this.need = true;
   }
+
+  // 조각 누르기: 한 번이면 메뉴, 1초 안에 같은 조각을 또 누르면 '두 번 누르기'(잡았다!)
+  tap(id, e) {
+    const now = performance.now(), last = this.lastTap;
+    this.lastTap = { id, t: now };
+    if (last && last.id === id && now - last.t < 1000) {
+      this.lastTap = null;
+      this.o.onDoubleClickPiece?.(id);
+      this.shake(id);
+    } else this.o.onClickPiece(id, { x: e.clientX, y: e.clientY });
+  }
+
+  // '잡았다' 표시: 조각을 잠깐 좌우로 흔든다
+  shake(id) { this.wiggle = { id, t0: performance.now() }; this.need = true; }
 
   setMoveMode(id) { this.moveMode = id; this.need = true; }
 
@@ -419,6 +423,7 @@ export class Board {
       if (Math.abs(p.ang - p.angT) > 0.5) { p.ang += (p.angT - p.ang) * 0.3; anim = true; } else p.ang = p.angT;
     }
     if (this.effects.length) anim = true;
+    if (this.wiggle) { if (performance.now() - this.wiggle.t0 < 520) anim = true; else { this.wiggle = null; this.need = true; } }
     if (anim || this.need) { this.draw(); this.need = false; }
   }
 
@@ -520,6 +525,10 @@ export class Board {
     ctx.save();
     ctx.translate(p.rx + half, p.ry + half);
     if (p.ang % 360) ctx.rotate(p.ang * Math.PI / 180);
+    if (this.wiggle && this.wiggle.id === p.id) {
+      const k = (performance.now() - this.wiggle.t0) / 500;
+      if (k < 1) ctx.rotate(Math.sin(k * Math.PI * 6) * 0.16 * (1 - k));
+    }
     if (picked) {
       ctx.scale(k, k);
       ctx.shadowColor = 'rgba(0,0,0,.45)';

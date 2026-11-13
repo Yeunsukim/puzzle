@@ -1,6 +1,6 @@
 // 화면 전환: 로그인 → 캐릭터 고르기 → 홈 → 퍼즐 고르기/만들기 → 게임방 → 내 기록 / 친구
 // 왼쪽 위 메뉴(줄 세 개) 서랍, 친구 초대 알림도 여기서 관리한다.
-import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal, getTheme, setTheme, isDark } from './util.js';
+import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal, getTheme, setTheme, isDark, VERSION } from './util.js';
 import { openRoom } from './game.js';
 import { piecePath, pieceDirs } from './jigsaw.js';
 
@@ -264,7 +264,7 @@ function renderDrawer() {
       <div class="code-box"><span class="code-big" style="font-size:30px">${esc(social.code)}</span><button class="btn light small" id="d-copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> 복사</button></div>
       <p class="muted" style="font-size:17px;margin-top:6px">친구에게 이 코드를 알려 주면 나를 친구로 추가할 수 있어요.</p>
     </div>
-    <div class="drawer-foot"><button class="btn line wide" id="d-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 로그아웃</button></div>`;
+    <div class="drawer-foot"><button class="btn line wide" id="d-logout"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> 로그아웃</button><p class="muted center" style="font-size:15px;margin-top:12px">버전: ${VERSION}</p></div>`;
   $('#d-close', drawer).addEventListener('click', closeDrawer);
   const markTheme = () => $$('#d-theme button', drawer).forEach(b => b.classList.toggle('on', b.dataset.t === getTheme()));
   markTheme();
