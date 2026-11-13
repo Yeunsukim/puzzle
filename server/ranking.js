@@ -32,7 +32,7 @@ export function period(type, offset = 0, now = Date.now()) {
 export async function rankEntries(start, end, limit = 5) {
   const rows = await db.all(`SELECT r.code, r.cols, r.rows, r.state, r.finished, p.title, p.url, p.w, p.h
     FROM rooms r JOIN pictures p ON p.id = r.picture_id
-    WHERE r.finished IS NOT NULL AND r.finished >= ? AND r.finished < ? AND (p.sample = 1 OR p.exhibit = 1)`, start, end);
+    WHERE r.finished IS NOT NULL AND r.finished >= ? AND r.finished < ? AND (p.sample = 1 OR p.exhibit = 1) AND r.ranked = 1`, start, end);
   const list = [];
   for (const r of rows) {
     let st;

@@ -902,7 +902,7 @@ async function renderRecords() {
           <div class="row" style="margin-top:12px">
             <button class="btn small" data-view="${i}"><i class="fa-solid fa-expand" aria-hidden="true"></i> 크게 보기</button>
             <button class="btn line small" data-save="${i}"><i class="fa-solid fa-download" aria-hidden="true"></i> 그림 저장하기</button>
-            ${r.myPhoto ? `<button class="exhibit-toggle small ${r.exhibit ? 'on' : ''}" data-exhibit="${r.picture_id}" aria-pressed="${r.exhibit}"><span class="sw"></span><span class="tx">${r.exhibit ? '갤러리 전시 중' : '전시 안 함'}</span></button>` : ''}
+            <button class="exhibit-toggle small ${r.ranked ? 'on' : ''}" data-ranked="${esc(r.room_code)}" aria-pressed="${r.ranked}" title="누르면 랭킹·갤러리 참가를 켜고 꺼요"><span class="sw"></span><span class="tx">${r.ranked ? '랭킹 참가 중' : '랭킹에 안 냄'}</span></button>
           </div>
         </div>
       </div>`).join('')}</div>`
@@ -927,15 +927,15 @@ async function renderRecords() {
     }
   })();
   $$('[data-view]', app).forEach(b => b.addEventListener('click', () => viewArtwork(records[Number(b.dataset.view)], myNick)));
-  $$('[data-exhibit]', app).forEach(b => b.addEventListener('click', async () => {
-    const id = b.dataset.exhibit, on = !b.classList.contains('on');
+  $$('[data-ranked]', app).forEach(b => b.addEventListener('click', async () => {
+    const code = b.dataset.ranked, on = !b.classList.contains('on');
     b.disabled = true;
     try {
-      await api(`/api/pictures/${id}/exhibit`, { on });
-      // 같은 사진으로 만든 다른 기록의 단추도 함께 바꾼다
-      $$(`[data-exhibit="${id}"]`, app).forEach(x => { x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); $('.tx', x).textContent = on ? '갤러리 전시 중' : '전시 안 함'; });
-      toast(on ? '이 사진을 갤러리·랭킹에 전시해요.' : '이 사진은 이제 갤러리·랭킹에 나오지 않아요.');
-    } catch (err) { toast(err.message); }
+      await api(`/api/rooms/${code}/ranked`, { on });
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+      $('.tx', b).textContent = on ? '랭킹 참가 중' : '랭킹에 안 냄';
+      toast(on ? '이 작품을 랭킹·갤러리에 다시 냈어요.' : '이 작품은 이제 랭킹·갤러리에 나오지 않아요.');
+    } catch (err) { toast(err.message, 4500); }
     finally { b.disabled = false; }
   }));
   $$('[data-save]', app).forEach(b => b.addEventListener('click', async () => {

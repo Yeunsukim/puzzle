@@ -131,6 +131,7 @@ async function openPostgres() {
   await db.exec(PG_SCHEMA);
   // 예전 데이터베이스에 없던 칸 추가 (인터넷 데이터베이스)
   await db.exec('ALTER TABLE pictures ADD COLUMN IF NOT EXISTS exhibit INTEGER NOT NULL DEFAULT 1');
+  await db.exec('ALTER TABLE rooms ADD COLUMN IF NOT EXISTS ranked INTEGER NOT NULL DEFAULT 1');
   return db;
 }
 
@@ -144,6 +145,7 @@ async function openSqlite() {
   if (!hasCol('pictures', 'category')) s.exec("ALTER TABLE pictures ADD COLUMN category TEXT NOT NULL DEFAULT 'mine'");
   if (!hasCol('users', 'friend_code')) s.exec('ALTER TABLE users ADD COLUMN friend_code TEXT');
   if (!hasCol('pictures', 'exhibit')) s.exec('ALTER TABLE pictures ADD COLUMN exhibit INTEGER NOT NULL DEFAULT 1');
+  if (!hasCol('rooms', 'ranked')) s.exec('ALTER TABLE rooms ADD COLUMN ranked INTEGER NOT NULL DEFAULT 1');
   const plain = r => (r ? { ...r } : null);
   return {
     kind: 'sqlite',

@@ -95,6 +95,24 @@ app.post('/api/pictures', requireUser, ah(async (req, res) => {
   res.json({ picture: { id: r.id, title, url, w, h, sample: false, category: 'mine', exhibit: !!exhibit } });
 }));
 
+// 완성한 작품을 랭킹에 낼지 말지 (그 퍼즐을 함께 맞춘 사람이면 누구나 바꿀 수 있다)
+app.post('/api/rooms/:code/ranked', requireUser, ah(async (req, res) => {
+  const code = String(req.params.code || '').toUpperCase();
+  const mine = await db.get('SELECT 1 AS x FROM records WHERE user_id = ? AND room_code = ?', req.user.id, code);
+  if (!mine) return res.status(404).json({ error: '내가 함께 완성한 퍼즐만 바꿀 수 있어요.' });
+  const on = req.body?.on ? 1 : 0;
+  if (on) {
+    // 사진 전시가 꺼져 있으면: 내 사진이면 같이 켜고, 남의 사진이면 켤 수 없다
+    const pic = await db.get('SELECT p.id, p.owner_id, p.sample, p.exhibit FROM rooms r JOIN pictures p ON p.id = r.picture_id WHERE r.code = ?', code);
+    if (pic && !pic.sample && !pic.exhibit) {
+      if (pic.owner_id !== req.user.id) return res.status(400).json({ error: '사진을 올린 사람이 전시를 꺼 두어서 랭킹에 낼 수 없어요.' });
+      await db.run('UPDATE pictures SET exhibit = 1 WHERE id = ?', pic.id);
+    }
+  }
+  await db.run('UPDATE rooms SET ranked = ? WHERE code = ?', on, code);
+  res.json({ ok: true, ranked: !!on });
+}));
+
 // 내가 올린 사진의 갤러리·랭킹 전시 켜기/끄기 (사진을 올린 사람만)
 app.post('/api/pictures/:id/exhibit', requireUser, ah(async (req, res) => {
   const pic = await db.get('SELECT id FROM pictures WHERE id = ? AND owner_id = ? AND sample = 0', Number(req.params.id), req.user.id);
@@ -154,14 +172,16 @@ app.post('/api/saved/remove', requireUser, ah(async (req, res) => {
 // ---- 내 기록 ----
 app.get('/api/records', requireUser, ah(async (req, res) => {
   // 완성 그림을 다시 그릴 수 있도록 칸 수·조각 모양(볼록·오목)·그림 크기도 함께 보낸다
-  const rows = await db.all(`SELECT r.*, rm.cols, rm.rows, rm.state, p.w, p.h, p.owner_id AS pic_owner, p.sample AS pic_sample, p.exhibit AS pic_exhibit FROM records r
+  const rows = await db.all(`SELECT r.*, rm.cols, rm.rows, rm.state, rm.ranked AS room_ranked, p.w, p.h, p.owner_id AS pic_owner, p.sample AS pic_sample, p.exhibit AS pic_exhibit FROM records r
     LEFT JOIN rooms rm ON rm.code = r.room_code LEFT JOIN pictures p ON p.id = r.picture_id
     WHERE r.user_id = ? ORDER BY r.finished DESC LIMIT 200`, req.user.id);
-  res.json({ me: req.user.nick, records: rows.map(({ state, pic_owner, pic_sample, pic_exhibit, ...r }) => {
+  res.json({ me: req.user.nick, records: rows.map(({ state, pic_owner, pic_sample, pic_exhibit, room_ranked, ...r }) => {
     let edges = null;
     try { edges = JSON.parse(state || 'null')?.edges || null; } catch { /* 없으면 보기용 무늬 */ }
     const myPhoto = !pic_sample && pic_owner === req.user.id; // 내가 올린 사진이면 전시 켜기/끄기를 할 수 있다
-    return { ...r, edges, friends: JSON.parse(r.friends), myPhoto, exhibit: pic_sample ? true : !!pic_exhibit };
+    const exhibit = pic_sample ? true : !!pic_exhibit;
+    // ranked: 이 작품이 랭킹·갤러리에 나가는지 (작품 설정과 사진 전시 설정이 모두 켜져 있어야 함)
+    return { ...r, edges, friends: JSON.parse(r.friends), myPhoto, exhibit, ranked: room_ranked !== 0 && exhibit };
   }) });
 }));
 

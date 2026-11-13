@@ -474,6 +474,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       ${top.length ? `<b><i class="fa-solid fa-${icon(Math.min(...top.map(x => x.rank)))}" aria-hidden="true"></i> 명예의 전당에 올랐어요!</b>` : ''}
       ${best.map(x => `${x.t} 랭킹 <b style="display:inline;font-size:20px">${x.rank}위</b> (${x.total}개 작품 중)`).join(' · ')}
       <div style="margin-top:4px">점수 ${(sum.score || 0).toLocaleString('ko-KR')}점${top.length ? ' · 갤러리에 액자로 전시돼요' : ''}</div>
+      <button class="btn line small" id="done-unrank" style="margin-top:10px"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> 이 작품은 랭킹에 내지 않기</button>
     </div>`;
   }
 
@@ -482,7 +483,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     hideMenu();
     if (!quiet) { confetti(); fanfare(); }
     const mine = sum.players.find(p => p.uid === me.id);
-    modal(`
+    const doneBg = modal(`
       <div class="center"><span class="eyebrow">완성</span></div>
       <h2 class="center" style="margin-top:8px">퍼즐을 완성했어요!</h2>
       <img class="done-img" src="${esc(sum.url)}" alt="">
@@ -503,6 +504,14 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         <a class="btn teal wide" href="#/start"><i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i> 다른 퍼즐 하기</a>
         <button class="btn light wide" data-close>완성된 그림 구경하기</button>
       </div>`);
+    $('#done-unrank', doneBg)?.addEventListener('click', async e => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        await api(`/api/rooms/${code}/ranked`, { on: false });
+        btn.closest('.done-rank').innerHTML = '이 작품은 랭킹·갤러리에 내지 않아요. 내 기록에서 다시 낼 수 있어요.';
+      } catch (err) { toast(err.message); btn.disabled = false; }
+    });
   }
 
   const modals = new Set();
