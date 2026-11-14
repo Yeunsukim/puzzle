@@ -1,4 +1,4 @@
-// 랭킹: 완성한 퍼즐(방 하나 = 작품 하나)을 점수로 줄 세운다. 주간·월간 5위까지.
+// 랭킹: 완성한 퍼즐(방 하나 = 작품 하나)을 점수로 줄 세운다. 주간·월간 10위까지 전시, 5위까지 트로피.
 // 점수 = 조각 수 × 조각 수 × 10 ÷ 걸린 시간(초)  → 조각이 많을수록, 빨리 맞출수록 높다.
 // 시간은 한국 시간 기준: 주간 = 월요일 0시 ~ 다음 월요일 0시, 월간 = 1일 0시 ~ 다음 달 1일 0시
 import { db, ah } from './db.js';
@@ -94,7 +94,7 @@ export function rankingRoutes(app) {
     const type = req.query.type === 'month' ? 'month' : 'week';
     const offset = Math.max(-52, Math.min(0, Math.round(Number(req.query.offset) || 0)));
     const p = period(type, offset);
-    res.json({ ...p, offset, entries: await rankEntries(p.start, p.end, 5) });
+    res.json({ ...p, offset, entries: await rankEntries(p.start, p.end, 10) });
   }));
 
   // 내가 받은 트로피

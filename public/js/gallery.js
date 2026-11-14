@@ -1,5 +1,6 @@
 // 랭킹 작품 전시: 첫 화면 '명예의 전당', 갤러리 화면, 내 트로피
 // 1~5위는 순위마다 다른 액자에 담는다 (1위 황금 · 2위 은 · 3위 동 · 4위 원목 · 5위 흰 액자)
+// 6~10위는 소박한 나무 테 액자에 걸어 전시만 한다 (선물 없음)
 import { $, $$, esc, api, fmtTime } from './util.js';
 import { renderArtwork, viewArtwork, dateText } from './artwork.js';
 
@@ -10,6 +11,8 @@ export const PRIZE = {
   4: { name: '원목 액자', gift: '상장', icon: 'award', cls: 'wood' },
   5: { name: '흰 액자', gift: '상장', icon: 'award', cls: 'white' },
 };
+const PLAIN = { name: '소박한 나무 테 액자', gift: '', icon: 'image', cls: 'plain' };
+export const prizeOf = rank => PRIZE[rank] || PLAIN;
 const typeName = t => (t === 'month' ? '월간' : '주간');
 
 // 랭킹 항목 → 완성 그림을 그릴 때 쓰는 모양으로
@@ -21,7 +24,7 @@ const artist = e => e.people.map(p => p.nick).join(' · ') || '알 수 없음';
 
 // 액자에 담긴 작품 + 아래 설명표
 function framed(e, data, big) {
-  const pz = PRIZE[e.rank];
+  const pz = prizeOf(e.rank);
   return `
   <figure class="exhibit ${big ? 'big' : ''}">
     <button class="frame frame-${pz.cls}" data-art="${e.code}" aria-label="「${esc(e.title)}」 크게 보기">
@@ -33,7 +36,7 @@ function framed(e, data, big) {
       <b class="pl-title">「${esc(e.title)}」</b>
       <span class="pl-artist">${esc(artist(e))}</span>
       <span class="pl-meta">조각 퍼즐 ${e.pieces}조각 · ${fmtTime(e.seconds)} · 점수 ${e.score.toLocaleString('ko-KR')}</span>
-      <span class="pl-date">${dateText(e.finished)} 완성 · 선물: ${pz.name}과 ${pz.gift}</span>
+      <span class="pl-date">${dateText(e.finished)} 완성 · ${pz.gift ? `선물: ${pz.name}과 ${pz.gift}` : '10위 안 전시 작품'}</span>
     </figcaption>
   </figure>`;
 }
@@ -77,6 +80,7 @@ export async function hallOfFame(el) {
     try { data = await api(`/api/rankings?type=${type}`); } catch { $('#hall-list', el).innerHTML = '<p class="muted">랭킹을 불러오지 못했어요.</p>'; return; }
     const list = $('#hall-list', el);
     if (!list) return;
+    data = { ...data, entries: data.entries.slice(0, 5) }; // 첫 화면은 5위까지만
     list.innerHTML = data.entries.length ? data.entries.map(e => framed(e, data, e.rank === 1)).join('') : `<div class="card empty-hall">${emptyText(type, 0)}</div>`;
     fill(list, data);
   };
@@ -89,7 +93,7 @@ export async function renderGallery(main) {
   const draw = async () => {
     main.innerHTML = `
       <div class="page-title"><span class="eyebrow">갤러리</span><h2 style="margin-top:10px">랭킹 작품 전시관</h2>
-        <p>주간·월간 랭킹 5위까지의 작품을 액자에 담아 전시해요. 작품을 누르면 크게 보고 저장할 수 있어요.</p></div>
+        <p>주간·월간 랭킹 10위까지의 작품을 액자에 담아 전시해요. 1~5위는 특별한 액자와 선물, 6~10위는 소박한 나무 테 액자예요. 작품을 누르면 크게 보고 저장할 수 있어요.</p></div>
       <div class="gallery-bar">
         <div class="seg"><button data-t="week" class="${type === 'week' ? 'on' : ''}">주간</button><button data-t="month" class="${type === 'month' ? 'on' : ''}">월간</button></div>
         <div class="row">
@@ -126,7 +130,7 @@ export async function trophyList(el) {
     <div class="card trophies">
       <h3 style="margin-bottom:12px"><i class="fa-solid fa-trophy" aria-hidden="true"></i> 내 트로피 ${awards.length}개</h3>
       ${awards.length ? `<div class="trophy-row">${awards.map(a => {
-        const pz = PRIZE[a.rank] || PRIZE[5];
+        const pz = PRIZE[a.rank] || PRIZE[5]; // 트로피는 5위까지만
         return `<div class="trophy ${pz.cls}"><i class="fa-solid fa-${pz.icon}" aria-hidden="true"></i>
           <b>${esc(a.label)} ${a.type === 'month' ? '월간' : '주간'} ${a.rank}위</b><span>「${esc(a.title)}」</span><small>${pz.name} · ${pz.gift}</small></div>`;
       }).join('')}</div>`

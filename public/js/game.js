@@ -526,10 +526,12 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     if (!r) return '';
     const best = [r.week && { t: '이번 주', ...r.week }, r.month && { t: '이번 달', ...r.month }].filter(Boolean);
     const top = best.filter(x => x.rank <= 5);
+    const shown = best.filter(x => x.rank <= 10);
     const icon = n => (n === 1 ? 'crown' : n <= 3 ? 'medal' : 'award');
     return `<div class="done-rank ${top.length ? 'top' : ''}">
       ${top.length ? `<b><i class="fa-solid fa-${icon(Math.min(...top.map(x => x.rank)))}" aria-hidden="true"></i> 명예의 전당에 올랐어요!</b>` : ''}
       ${best.map(x => `${x.t} 랭킹 <b style="display:inline;font-size:20px">${x.rank}위</b> (${x.total}개 작품 중)`).join(' · ')}
+      ${!top.length && shown.length ? '<b><i class="fa-solid fa-image" aria-hidden="true"></i> 10위 안! 갤러리에 전시돼요</b>' : ''}
       <div style="margin-top:4px">점수 ${(sum.score || 0).toLocaleString('ko-KR')}점${top.length ? ' · 갤러리에 액자로 전시돼요' : ''}</div>
       <button class="btn line small" id="done-unrank" style="margin-top:10px"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> 이 작품은 랭킹에 내지 않기</button>
     </div>`;
