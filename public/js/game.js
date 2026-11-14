@@ -507,7 +507,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       await shareInvite({
         title: `${me.nick}님이 퍼즐을 같이 하재요!`,
         text: `「${pic.title || '퍼즐'}」 ${n}조각 · 방 번호 ${code}\n링크를 누르면 바로 같이 맞출 수 있어요.`,
-        url: link,
+        url: link.replace('/#/room/', '/r/'), // 카카오톡에서도 잘 열리는 짧은 주소
         imageUrl: absUrl(pic.url, config.publicUrl || location.origin),
         button: '같이 맞추기',
       }, config);

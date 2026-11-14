@@ -202,6 +202,11 @@ app.get('/uploads/:name', ah(async (req, res) => {
 }));
 // 오래된 브라우저가 찾는 기본 아이콘 주소
 app.get('/favicon.ico', (_req, res) => res.redirect(301, '/favicon.png'));
+// 짧은 초대 주소: /r/방번호 → 그 게임방 (카카오톡 등은 주소의 # 뒤를 버릴 수 있어서)
+app.get('/r/:code', (req, res) => {
+  const code = String(req.params.code || '').toUpperCase();
+  res.redirect(302, /^[A-Z0-9]{6}$/.test(code) ? '/#/room/' + code : '/');
+});
 // ---- 구글·네이버 검색용 ----
 // 사이트 주소: 직접 적은 것(PUBLIC_URL) → Render 주소 → 지금 들어온 주소 순서로 쓴다
 const siteOrigin = req => publicUrl || `${req.protocol}://${req.get('host')}`;
