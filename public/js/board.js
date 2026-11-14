@@ -333,6 +333,16 @@ export class Board {
       } else this.o.onChanceCancel?.();
       return;
     }
+    if (this.moveMode >= 0) {
+      const w = this.toWorld(e.clientX, e.clientY);
+      const id = this.moveMode;
+      this.moveMode = -1;
+      this.touches.delete(e.pointerId);
+      this.c.style.cursor = 'default';
+      this.need = true;
+      this.o.onTapMove?.(id, w.x - this.S / 2, w.y - this.S / 2);
+      return;
+    }
     // 예전 누르기가 '놓기' 없이 남아 있으면(놓기 신호를 놓친 경우) 먼저 그 자리에 놓아 정리한다
     if (this.ptr && e.pointerType === 'mouse' && this.ptr.id === e.pointerId) {
       this.debug?.('놓기 신호를 놓쳐서 정리함');
@@ -399,6 +409,7 @@ export class Board {
       this.c.style.cursor = cell >= 0 ? 'crosshair' : 'default';
       return;
     }
+    if (this.moveMode >= 0 && !this.ptr) { this.c.style.cursor = 'crosshair'; return; }
     if (this.pinch) { if (this.touches.size >= 2) this.movePinch(); else this.pinch = null; return; }
     const now = performance.now();
     const w = this.toWorld(e.clientX, e.clientY);
@@ -465,13 +476,7 @@ export class Board {
     } else if (!ptr.moved && !cancelled) {
       this.debug?.(`뗌(누르기) 조각=${ptr.piece} 두번째=${!!ptr.dbl}`);
       this.tapWorld = this.toWorld(e.clientX, e.clientY); // 누른 곳 (틀 안팎 판단용)
-      // '놓을 곳 누르기' 중이면 누른 곳으로 조각을 옮긴다
-      if (this.moveMode >= 0) {
-        const w = this.toWorld(e.clientX, e.clientY);
-        const id = this.moveMode;
-        this.moveMode = -1;
-        this.o.onTapMove?.(id, w.x - this.S / 2, w.y - this.S / 2);
-      } else if (ptr.piece >= 0) {
+      if (ptr.piece >= 0) {
         if (!ptr.dbl) this.tap(ptr.piece, e); // 이미 '잡았다'로 처리한 두 번째 누르기면 메뉴를 다시 띄우지 않는다
       }
       else this.o.onClickEmpty?.();
@@ -500,7 +505,7 @@ export class Board {
   // 찬스 모드 켜기/끄기
   setChanceMode(on) { this.chanceMode = on; this.hoverCell = -1; this.c.style.cursor = on ? 'crosshair' : 'default'; this.need = true; }
 
-  setMoveMode(id) { this.moveMode = id; this.need = true; }
+  setMoveMode(id) { this.moveMode = id; this.c.style.cursor = id >= 0 ? 'crosshair' : 'default'; this.need = true; }
 
   // 고른 조각: 1.3배 크게 + 흰 테두리로 보여 준다 (-1 이면 선택 해제)
   // 크기는 마우스로 누른 곳 기준: 틀 밖이면 1.3배, 틀 안이면 원래 크기
