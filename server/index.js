@@ -197,6 +197,8 @@ app.get('/uploads/:name', ah(async (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
   res.end(Buffer.from(img.data));
 }));
+// 오래된 브라우저가 찾는 기본 아이콘 주소
+app.get('/favicon.ico', (_req, res) => res.redirect(301, '/favicon.png'));
 // 화면 파일(html·css·js)은 고친 내용이 바로 보이도록 매번 새 버전인지 확인하게 한다
 app.use(express.static(path.join(ROOT, 'public'), {
   extensions: ['html'],
