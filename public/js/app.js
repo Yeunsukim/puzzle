@@ -316,13 +316,29 @@ window.addEventListener('themechange', () => {
   const b = $('#theme-toggle');
   if (b) b.outerHTML = themeBtn(), bindThemeBtn();
 });
+// 아래줄: 지금 접속자 수 · 열린 방 수 (30초마다 새로)
+let liveCache = null, liveAt = 0;
+function drawLive() {
+  const el = document.getElementById('foot-live');
+  if (!el || !liveCache) return;
+  el.innerHTML = `<span class="live-dot" aria-hidden="true"></span><span>지금 접속 <b>${liveCache.online}</b>명 · 열린 방 <b>${liveCache.rooms}</b>개</span>`;
+  el.hidden = false;
+}
+async function showLive() {
+  drawLive();
+  if (Date.now() - liveAt < 30e3) return;
+  liveAt = Date.now();
+  try { liveCache = await (await fetch('/api/live')).json(); drawLive(); } catch { /* 못 받아도 그냥 안 보임 */ }
+}
+setInterval(() => { if (document.getElementById('foot-live') && !document.hidden) { liveAt = 0; showLive(); } }, 30e3);
 const footer = () => `
   <footer class="site-foot"><div class="site-foot-in">
     <a class="logo" href="#/home"><img src="/assets/logo.svg" alt=""><span>퍼즐 친구들</span></a>
-    <span>친구와 가족이 함께 맞추는 온라인 조각 퍼즐</span>
+    <span class="foot-right"><span class="live-stat" id="foot-live" hidden></span><span>친구와 가족이 함께 맞추는 온라인 조각 퍼즐</span></span>
   </div></footer>`;
 function shell(html) {
   app.innerHTML = topbar() + html + footer();
+  showLive();
   $('#menu-open').addEventListener('click', openDrawer);
   $('#me-open').addEventListener('click', openDrawer);
   bindThemeBtn();

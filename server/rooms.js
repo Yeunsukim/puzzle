@@ -76,6 +76,15 @@ export async function createRoom(picture, cols, rows, hostId) {
 
 // 방 불러오기: 메모리에 있으면 그것을, 없으면 데이터베이스에서 (동시에 두 번 불러오지 않게)
 const loading = new Map();
+// 홈 아래줄에 보여 줄 숫자: 지금 사람이 들어가 있는(아직 다 맞추지 않은) 방 수, 게임 중인 사람 수
+export function liveRooms() {
+  let rooms = 0, players = 0;
+  for (const room of live.values()) {
+    if (!room.online.size || room.state.finishedAt) continue;
+    rooms++; players += room.online.size;
+  }
+  return { rooms, players };
+}
 export function getRoom(codeIn) {
   const code = String(codeIn || '').trim().toUpperCase();
   if (!/^[A-Z0-9]{6}$/.test(code)) return Promise.resolve(null);

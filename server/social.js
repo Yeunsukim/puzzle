@@ -9,6 +9,7 @@ const onlineCount = new Map(); // uid -> 열려 있는 연결 수
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export const isOnline = uid => (onlineCount.get(uid) || 0) > 0;
+export const onlineUsers = () => onlineCount.size; // 지금 접속 중인 사람 수
 const notify = (uid, event, data = {}) => io?.to('u:' + uid).emit(event, data);
 
 // 친구맺기 코드: 친구에게 알려 주면 나를 찾을 수 있는 8글자

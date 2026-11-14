@@ -749,3 +749,11 @@ button, input, select { font: inherit; color: inherit; }
 .btn.kakao-btn .fa-comment { color: #191919; }
 .or-line { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--ink-3); font-size: 15px; }
 .or-line::before, .or-line::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* 아래줄: 지금 접속자 · 열린 방 */
+.site-foot .foot-right { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.live-stat { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-2); font-size: 16px; white-space: nowrap; }
+.live-stat b { color: var(--ink); font-weight: 700; }
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: #2E9C8F; box-shadow: 0 0 0 0 rgba(46,156,143,.6); animation: live-pulse 2s infinite; }
+@keyframes live-pulse { 0% { box-shadow: 0 0 0 0 rgba(46,156,143,.55); } 70% { box-shadow: 0 0 0 8px rgba(46,156,143,0); } 100% { box-shadow: 0 0 0 0 rgba(46,156,143,0); } }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }

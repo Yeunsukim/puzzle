@@ -7,8 +7,8 @@ import crypto from 'node:crypto';
 import { Server } from 'socket.io';
 import { db, ah, ROOT, UPLOAD_DIR } from './db.js';
 import { authRoutes, requireUser, userFromCookie, googleClientId } from './auth.js';
-import { createRoom, roomInfo, progressInfo, attachSockets, saveAll } from './rooms.js';
-import { socialRoutes, attachSocial } from './social.js';
+import { createRoom, roomInfo, progressInfo, attachSockets, saveAll, liveRooms } from './rooms.js';
+import { socialRoutes, attachSocial, onlineUsers } from './social.js';
 import { rankingRoutes } from './ranking.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -187,6 +187,8 @@ app.get('/api/records', requireUser, ah(async (req, res) => {
 
 // 인터넷 서버가 게임 중에 잠들지 않도록 깨어 있음 확인용
 app.get('/api/ping', (_req, res) => res.json({ ok: true, t: Date.now() }));
+// 지금 접속자 수 · 열린 방 수 (홈 아래줄)
+app.get('/api/live', (_req, res) => res.json({ online: onlineUsers(), ...liveRooms() }));
 
 app.use('/api', (_req, res) => res.status(404).json({ error: '없는 주소예요.' }));
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' })); // 예전에 내 컴퓨터에 저장한 사진
