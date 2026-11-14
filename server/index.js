@@ -3,6 +3,7 @@ import express from 'express';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
 import { Server } from 'socket.io';
 import { db, ah, ROOT, UPLOAD_DIR } from './db.js';
@@ -201,6 +202,26 @@ app.get('/uploads/:name', ah(async (req, res) => {
 }));
 // 오래된 브라우저가 찾는 기본 아이콘 주소
 app.get('/favicon.ico', (_req, res) => res.redirect(301, '/favicon.png'));
+// ---- 구글·네이버 검색용 ----
+// 사이트 주소: 직접 적은 것(PUBLIC_URL) → Render 주소 → 지금 들어온 주소 순서로 쓴다
+const siteOrigin = req => publicUrl || `${req.protocol}://${req.get('host')}`;
+// 첫 화면: 주소가 들어가는 자리(%SITE%)를 진짜 주소로 바꿔서 보낸다
+let indexHtml = null;
+const sendIndex = ah(async (req, res) => {
+  if (indexHtml === null) indexHtml = await fs.readFile(path.join(ROOT, 'public', 'index.html'), 'utf8');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.send(indexHtml.replaceAll('%SITE%', siteOrigin(req)));
+});
+app.get(['/', '/index.html'], sendIndex);
+// 검색 로봇 안내문: 화면은 읽게 하고, 내부 자료(API·올린 사진)는 막는다
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /uploads/\n\nSitemap: ${siteOrigin(req)}/sitemap.xml\n`);
+});
+// 사이트 지도
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${siteOrigin(req)}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n</urlset>\n`);
+});
 // 화면 파일(html·css·js)은 고친 내용이 바로 보이도록 매번 새 버전인지 확인하게 한다
 app.use(express.static(path.join(ROOT, 'public'), {
   extensions: ['html'],
