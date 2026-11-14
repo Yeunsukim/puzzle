@@ -1,8 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
   <!-- 홈 화면 아이콘: 네모 가득 채운 바탕 (휴대폰이 모서리를 알아서 둥글게 깎음) -->
+  <defs>
+    <!-- 위쪽 글씨 길 (왼쪽 → 위 → 오른쪽) -->
+    <path id="top" d="M16.5 50 a33.5 33.5 0 0 1 67 0"/>
+    <!-- 아래쪽 글씨 길 (왼쪽 → 아래 → 오른쪽): 글씨가 똑바로 읽히게 -->
+    <path id="bot" d="M10.5 50 a39.5 39.5 0 0 0 79 0"/>
+  </defs>
   <rect width="100" height="100" fill="#1D4E73"/>
-  <circle cx="50" cy="50" r="38" fill="none" stroke="#C9A45C" stroke-width="1.4"/>
-  <path d="M30 34h12c-2.6-8 2.4-12.5 8-12.5s10.6 4.5 8 12.5h12v12c8-2.6 12.5 2.4 12.5 8s-4.5 10.6-12.5 8v12H30V62c-8 2.6-12.5-2.4-12.5-8s4.5-10.6 12.5-8z" transform="translate(50 52) scale(.66) translate(-50 -52)" fill="#F7F3EA"/>
-  <circle cx="44.9" cy="54" r="3.4" fill="#49C5B6"/>
-  <circle cx="55.9" cy="54" r="3.4" fill="#E2725B"/>
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#C9A45C" stroke-width="1.2"/>
+  <circle cx="50" cy="50" r="29.5" fill="none" stroke="#C9A45C" stroke-width="1.2"/>
+  <g font-family="'Arial Black', 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="8.6" fill="#F3D27A" text-anchor="middle" letter-spacing=".6">
+    <text><textPath xlink:href="#top" href="#top" startOffset="50%">Puzzle-Friends</textPath></text>
+    <text><textPath xlink:href="#bot" href="#bot" startOffset="50%">Puzzle-Friends</textPath></text>
+    <text x="14.2" y="53" font-size="7" letter-spacing="0">✦</text>
+    <text x="85.8" y="53" font-size="7" letter-spacing="0">✦</text>
+  </g>
+  <path d="M30 34h12c-2.6-8 2.4-12.5 8-12.5s10.6 4.5 8 12.5h12v12c8-2.6 12.5 2.4 12.5 8s-4.5 10.6-12.5 8v12H30V62c-8 2.6-12.5-2.4-12.5-8s4.5-10.6 12.5-8z" transform="translate(50 52) scale(.5) translate(-50 -52)" fill="#F7F3EA"/>
+  <circle cx="46.2" cy="54" r="2.6" fill="#49C5B6"/>
+  <circle cx="54.6" cy="54" r="2.6" fill="#E2725B"/>
 </svg>
