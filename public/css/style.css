@@ -732,3 +732,13 @@ button, input, select { font: inherit; color: inherit; }
 .rec .row .exhibit-toggle .sw { width: 52px; height: 30px; }
 .rec .row .exhibit-toggle .sw::after { width: 22px; height: 22px; }
 .rec .row .exhibit-toggle.on .sw::after { left: 26px; }
+
+/* 찬스 단추 */
+.chance-btn { position: relative; color: #B8860B; }
+.chance-btn .fa-solid { color: #D9A53A; }
+.chance-btn.on { background: #F3D27A; border-color: #C99A2E; }
+.chance-btn.on .fa-solid, .chance-btn.on small { color: #4A3407; }
+.chance-btn.empty { opacity: .55; }
+.chance-btn .cbadge { position: absolute; top: -8px; right: -8px; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 999px; background: #D9A53A; color: #2A1E05; font-size: 15px; font-weight: 700; display: grid; place-items: center; border: 2px solid var(--card); }
+.chance-btn.empty .cbadge { background: var(--ink-3); color: var(--paper); }
+.chance-btn.guest::after { content: ''; }

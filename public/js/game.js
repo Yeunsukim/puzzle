@@ -43,6 +43,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         <button class="zbtn" id="z-out" aria-label="작게 보기"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i><small>작게</small></button>
         <button class="zbtn" id="z-fit" aria-label="전체 보기"><i class="fa-solid fa-expand" aria-hidden="true"></i><small>전체</small></button>
         <button class="zbtn" id="z-hint" aria-label="밑그림 보기"><i class="fa-solid fa-eye" aria-hidden="true"></i><small>밑그림</small></button>
+        <button class="zbtn chance-btn" id="z-chance" aria-label="찬스" title="찬스: 칸을 고르면 맞는 조각을 자동으로 끼워 줘요" hidden><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><small>찬스</small><span class="cbadge" id="chance-left">0</span></button>
       </div>
       <button class="mini" id="g-mini" aria-label="완성 그림 크게 보기"><img id="g-mini-img" alt=""><span>완성 그림</span></button>
       <div class="hint-help" id="g-help">조각을 <b>누른 채 끌어서</b> 틀에 놓아요.<br>조각을 <b>한 번 누르면</b> 왼쪽·오른쪽 돌리기 메뉴가 나와요.</div>
@@ -139,6 +140,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         state.board?.resetInput();
         state.board?.setSelected(-1);
         state.board?.setPieces(res.snapshot.pieces);
+        state.chances = res.snapshot.chances || state.chances;
+        updateChance();
         setPlayers(res.snapshot.players);
         updateProgress();
         toast('다시 연결됐어요!');
@@ -223,6 +226,35 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   socket.on('cursor', ({ uid, x, y }) => state.board?.setCursor(uid, x, y));
   socket.on('cursor-off', ({ uid }) => { state.board?.removeCursor(uid); state.board?.setRemoteSelect(uid, -1); });
   socket.on('select', ({ uid, id }) => state.board?.setRemoteSelect(uid, id));
+
+  // ---- 찬스: 방을 만든 사람만 쓰고, 친구들은 남은 개수와 쓰는 모습을 함께 본다 ----
+  state.chances = { total: 0, left: 0, host: 0 };
+  function updateChance() {
+    const c = state.chances, btn = $('#z-chance');
+    btn.hidden = !c.total;
+    $('#chance-left').textContent = c.left;
+    btn.classList.toggle('empty', c.left <= 0);
+    btn.classList.toggle('guest', me.id !== c.host);
+    btn.setAttribute('aria-label', `찬스 ${c.left}개 남음`);
+  }
+  const endChance = () => { state.board?.setChanceMode(false); $('#z-chance').classList.remove('on'); };
+  $('#z-chance').addEventListener('click', () => {
+    const c = state.chances;
+    if (me.id !== c.host) return toast(`찬스는 방을 만든 사람만 쓸 수 있어요. 남은 찬스 ${c.left}개`, 3500);
+    if (state.board?.chanceMode) { endChance(); return toast('찬스를 쓰지 않았어요.'); }
+    if (c.left <= 0) return toast('남은 찬스가 없어요.');
+    hideMenu();
+    state.board.setChanceMode(true);
+    $('#z-chance').classList.add('on');
+    toast('틀 안에서 맞추고 싶은 칸을 한 번 눌러 주세요. (틀 밖을 누르면 취소)', 4500);
+  });
+  socket.on('chance', ({ by, nick, cell, left, total }) => {
+    state.chances = { ...state.chances, left, total };
+    updateChance();
+    const b = state.board;
+    if (b) { const c = cell % b.cols, r = Math.floor(cell / b.cols); b.effects.push({ x: c * b.S + b.S / 2, y: r * b.S + b.S / 2, t0: performance.now() }); b.need = true; }
+    if (by !== me.id) toast(`${nick}님이 찬스를 썼어요! 남은 찬스 ${left}개`, 3500);
+  });
   socket.on('done', summary => { state.snap.finishedAt = summary.finishedAt; updateTime(); showDone(summary); });
 
   // ---- 처음 준비 ----
@@ -236,6 +268,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     state.voicePeers = snap.voice || [];
     setPlayers(snap.players);
     updateVoiceUI();
+    state.chances = snap.chances || state.chances;
+    updateChance();
     let image;
     try { image = await loadImage(snap.picture.url); } catch { return showError('퍼즐 그림을 불러오지 못했어요.'); }
     await new Promise(r => setTimeout(r, 30)); // 안내 글이 먼저 보이도록
@@ -255,6 +289,14 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       onDoubleClickPiece: id => { closeMenu(); state.board.setSelected(id); },
       // 다른 조각을 누르면 열려 있던 팝업은 닫는다 (새 조각은 누르는 순간 이미 골라짐)
       onSelect: id => socket.emit('select', id),
+      onChance: cell => {
+        $('#z-chance').classList.remove('on');
+        socket.emit('chance', cell, res => {
+          if (res?.error) return toast(res.error, 3500);
+          toast(`찬스로 한 조각을 맞췄어요! 남은 찬스 ${res.left}개`);
+        });
+      },
+      onChanceCancel: () => { $('#z-chance').classList.remove('on'); toast('찬스를 쓰지 않았어요.'); },
       onPressPiece: id => { if (state.menuFor >= 0 && state.menuFor !== id) closeMenu(); },
       onClickEmpty: () => hideMenu(),
       // '누른 곳으로 옮기기': 잡았다가 바로 그 자리에 놓는다

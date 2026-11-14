@@ -5,6 +5,14 @@ import { rankOf, scoreOf } from './ranking.js';
 
 export const S = 100;            // 한 칸(조각) 크기 = 100 (게임판 단위)
 export const MAX_PLAYERS = 6;    // 나 + 친구 5명
+// 찬스(자동으로 한 조각 맞춰 주기) 개수: 조각 수 단계마다 1개씩
+const CHANCE_STEPS = [48, 96, 192, 300, 432, 972];
+export const chancesFor = n => CHANCE_STEPS.filter(x => n >= x).length;
+const chanceInfo = room => {
+  const total = room.state.chances?.total ?? chancesFor(room.cols * room.rows);
+  const used = room.state.chances?.used || 0;
+  return { total, used, left: Math.max(0, total - used), host: room.hostId || 0 };
+};
 export const COLORS = ['#E2725B', '#2779A7', '#2E9C8F', '#C9A45C', '#7E62C9', '#D9568C'];
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const live = new Map();          // 지금 메모리에 올라와 있는 방들
@@ -59,7 +67,7 @@ export async function createRoom(picture, cols, rows, hostId) {
   for (let i = 0; i < n; i++) {
     pieces.push({ id: i, x: slots[i].x + jitter(), y: slots[i].y + jitter(), rot: crypto.randomInt(4), cell: -1, locked: false });
   }
-  const state = { edges: { h, v }, pieces, scores: {}, people: {}, startedAt: null, finishedAt: null };
+  const state = { edges: { h, v }, pieces, scores: {}, people: {}, startedAt: null, finishedAt: null, chances: { total: chancesFor(n), used: 0 } };
   const code = await newCode();
   await db.run('INSERT INTO rooms (code, picture_id, cols, rows, host_id, state, created) VALUES (?, ?, ?, ?, ?, ?, ?)',
     code, picture.id, cols, rows, hostId, JSON.stringify(state), Date.now());
@@ -82,7 +90,7 @@ async function loadRoom(code) {
   if (!row) return null;
   const state = JSON.parse(row.state);
   const room = {
-    code, cols: row.cols, rows: row.rows,
+    code, cols: row.cols, rows: row.rows, hostId: row.host_id || 0, // 방을 만든 사람 (찬스를 쓸 수 있는 사람)
     picture: { id: row.picture_id, title: row.title, url: row.url, w: row.w, h: row.h },
     state,
     online: new Map(),   // uid -> { uid, nick, avatar, color, sockets:Set }
@@ -248,6 +256,7 @@ function snapshot(room, uid) {
     summary: room.state.finishedAt ? (room.state.lastSummary || summary(room)) : null,
     now: Date.now(), me: uid, maxPlayers: MAX_PLAYERS,
     voice: voiceList(room),
+    chances: chanceInfo(room),
   };
 }
 const voiceList = room => [...room.voice].map(([sid, uid]) => ({ sid, uid }));
@@ -397,6 +406,28 @@ export function attachSockets(io) {
       const to = String(msg?.to || '');
       if (!room.voice.has(to) || !msg.data || JSON.stringify(msg.data).length > 20000) return;
       io.to(to).emit('voice-signal', { from: socket.id, uid, data: msg.data });
+    });
+
+    // 찬스: 방을 만든 사람이 틀의 칸 하나를 고르면, 그 칸에 맞는 조각을 찾아 방향까지 맞춰 끼워 준다
+    socket.on('chance', (cell, ack) => {
+      const reply = typeof ack === 'function' ? ack : () => {};
+      if (!room || room.state.finishedAt) return reply({ error: '지금은 찬스를 쓸 수 없어요.' });
+      if (uid !== room.hostId) return reply({ error: '찬스는 방을 만든 사람만 쓸 수 있어요.' });
+      const info = chanceInfo(room);
+      if (info.left <= 0) return reply({ error: '남은 찬스가 없어요.' });
+      if (!Number.isInteger(cell) || cell < 0 || cell >= room.state.pieces.length) return reply({ error: '틀 안의 칸을 눌러 주세요.' });
+      const p = room.state.pieces[cell]; // 칸 번호 = 그 칸에 들어갈 조각 번호
+      if (p.locked) return reply({ error: '이미 맞춘 칸이에요. 다른 칸을 눌러 주세요.' });
+      const holder = room.held.get(p.id);
+      if (holder && holder !== uid) return reply({ error: '친구가 그 조각을 잡고 있어요. 잠시 뒤에 다시 해 주세요.' });
+      room.held.delete(p.id);
+      p.rot = 0;
+      const { changed, locked } = dropPiece(room, uid, p, (cell % room.cols) * S, Math.floor(cell / room.cols) * S);
+      room.state.chances = { total: info.total, used: info.used + 1 };
+      const now = chanceInfo(room);
+      io.to(room.code).emit('chance', { by: uid, nick: user.nick, cell, left: now.left, total: now.total });
+      reply({ ok: true, left: now.left });
+      afterChange(changed, locked);
     });
 
     // 골라 둔 조각(흰 테두리)을 친구들에게 알려 준다

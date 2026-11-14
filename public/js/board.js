@@ -288,6 +288,18 @@ export class Board {
       this.startPinch();
       return;
     }
+    if (this.chanceMode) {
+      const w = this.toWorld(e.clientX, e.clientY);
+      this.chanceMode = false;
+      this.hoverCell = -1;
+      this.need = true;
+      this.touches.delete(e.pointerId);
+      if (this.inFrameAt(w.x, w.y)) {
+        const c = Math.min(this.cols - 1, Math.floor(w.x / this.S)), r = Math.min(this.rows - 1, Math.floor(w.y / this.S));
+        this.o.onChance?.(r * this.cols + c);
+      } else this.o.onChanceCancel?.();
+      return;
+    }
     // 예전 누르기가 '놓기' 없이 남아 있으면(놓기 신호를 놓친 경우) 먼저 그 자리에 놓아 정리한다
     if (this.ptr && e.pointerType === 'mouse' && this.ptr.id === e.pointerId) {
       this.debug?.('놓기 신호를 놓쳐서 정리함');
@@ -344,6 +356,13 @@ export class Board {
     // 마우스 단추가 이미 떼어져 있는데 끄는 중으로 남아 있으면 놓은 것으로 처리
     if (this.ptr && e.pointerType === 'mouse' && e.pointerId === this.ptr.id && e.buttons === 0 && this.ptr.moved) { this.pointerUp(e, false); return; }
     if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.chanceMode) {
+      const w = this.toWorld(e.clientX, e.clientY);
+      const cell = this.inFrameAt(w.x, w.y) ? Math.min(this.rows - 1, Math.floor(w.y / this.S)) * this.cols + Math.min(this.cols - 1, Math.floor(w.x / this.S)) : -1;
+      if (cell !== this.hoverCell) { this.hoverCell = cell; this.need = true; }
+      this.c.style.cursor = cell >= 0 ? 'crosshair' : 'default';
+      return;
+    }
     if (this.pinch) { if (this.touches.size >= 2) this.movePinch(); return; }
     const now = performance.now();
     const w = this.toWorld(e.clientX, e.clientY);
@@ -441,6 +460,9 @@ export class Board {
   setRemoteSelect(uid, id) { if (id >= 0) this.remoteSel.set(uid, id); else this.remoteSel.delete(uid); this.need = true; }
   // 이 조각을 골라 둔 친구 (없으면 null)
   remotePicker(id) { for (const [uid, sid] of this.remoteSel) if (sid === id && uid !== this.me) return uid; return null; }
+
+  // 찬스 모드 켜기/끄기
+  setChanceMode(on) { this.chanceMode = on; this.hoverCell = -1; this.c.style.cursor = on ? 'crosshair' : 'default'; this.need = true; }
 
   setMoveMode(id) { this.moveMode = id; this.need = true; }
 
@@ -568,6 +590,25 @@ export class Board {
     ctx.strokeStyle = th.edge;
     ctx.lineWidth = Math.max(2 / z, S * 0.02);
     ctx.strokeRect(0, 0, W, H);
+    if (this.chanceMode) {
+      // 찬스 모드: 틀을 금빛으로 두르고, 마우스가 올라간 칸을 밝게
+      ctx.save();
+      ctx.strokeStyle = '#E8B84A';
+      ctx.lineWidth = Math.max(4 / z, S * 0.05);
+      ctx.setLineDash([S * 0.25, S * 0.15]);
+      ctx.strokeRect(-S * 0.05, -S * 0.05, W + S * 0.1, H + S * 0.1);
+      ctx.restore();
+      if (this.hoverCell >= 0) {
+        const hc = this.hoverCell % this.cols, hr = Math.floor(this.hoverCell / this.cols);
+        ctx.save();
+        ctx.fillStyle = 'rgba(232,184,74,.35)';
+        ctx.strokeStyle = '#E8B84A';
+        ctx.lineWidth = Math.max(3 / z, S * 0.04);
+        ctx.fillRect(hc * S, hr * S, S, S);
+        ctx.strokeRect(hc * S, hr * S, S, S);
+        ctx.restore();
+      }
+    }
 
     // 화면에 보이는 범위
     const vx0 = cam.x - S, vy0 = cam.y - S, vx1 = cam.x + this.vw / z + S, vy1 = cam.y + this.vh / z + S;
