@@ -67,7 +67,7 @@ async function getIceServers() {
   return [...baseIce, ...(meteredCache.list || [])];
 }
 const hasTurn = () => !!(process.env.TURN_URL || (process.env.METERED_APP && process.env.METERED_API_KEY));
-app.get('/api/config', ah(async (_req, res) => res.json({ googleClientId, lanUrls: lanUrls(), publicUrl, iceServers: await getIceServers(), turn: hasTurn() })));
+app.get('/api/config', ah(async (_req, res) => res.json({ googleClientId, lanUrls: lanUrls(), publicUrl, iceServers: await getIceServers(), turn: hasTurn(), kakaoKey: (process.env.KAKAO_JS_KEY || '').trim() })));
 
 // ---- 퍼즐 그림 ----
 app.get('/api/pictures', requireUser, ah(async (req, res) => {

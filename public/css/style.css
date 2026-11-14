@@ -742,3 +742,10 @@ button, input, select { font: inherit; color: inherit; }
 .chance-btn .cbadge { position: absolute; top: -8px; right: -8px; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 999px; background: #D9A53A; color: #2A1E05; font-size: 15px; font-weight: 700; display: grid; place-items: center; border: 2px solid var(--card); }
 .chance-btn.empty .cbadge { background: var(--ink-3); color: var(--paper); }
 .chance-btn.guest::after { content: ''; }
+
+/* 카카오톡 단추 (카카오 노란색) */
+.btn.kakao-btn { background: #FEE500; color: #191919; border-color: #FEE500; }
+.btn.kakao-btn:hover { background: #F5DC00; border-color: #F5DC00; }
+.btn.kakao-btn .fa-comment { color: #191919; }
+.or-line { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--ink-3); font-size: 15px; }
+.or-line::before, .or-line::after { content: ''; flex: 1; height: 1px; background: var(--line); }

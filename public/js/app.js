@@ -1,6 +1,7 @@
 // 화면 전환: 로그인 → 캐릭터 고르기 → 홈 → 퍼즐 고르기/만들기 → 게임방 → 내 기록 / 친구
 // 왼쪽 위 메뉴(줄 세 개) 서랍, 친구 초대 알림도 여기서 관리한다.
 import { AVATARS, COUNTS, avatarUrl, $, $$, esc, api, toast, gridFor, cropRect, fmtTime, loadImage, copyText, openModal, getTheme, setTheme, isDark, VERSION } from './util.js';
+import { shareInvite } from './share.js';
 import { openRoom } from './game.js';
 import { piecePath, pieceDirs } from './jigsaw.js';
 import { renderArtwork, downloadCanvas, viewArtwork } from './artwork.js';
@@ -760,6 +761,7 @@ function renderFriends() {
           <h3>내 친구맺기 코드</h3>
           <div class="code-box"><span class="code-big" id="fr-code"></span><button class="btn light small" id="fr-copy"><i class="fa-solid fa-copy" aria-hidden="true"></i> 복사</button></div>
           <p class="muted">친구에게 이 코드를 알려 주면, 친구가 이 코드로 나에게 친구 신청을 할 수 있어요.</p>
+          <button class="btn big wide kakao-btn" id="fr-kakao" style="margin-top:14px"><i class="fa-solid fa-comment" aria-hidden="true"></i> <span>카카오톡으로 친구 초대</span></button>
         </div>
       </div>
       <div class="stack" id="fr-lists"></div>
@@ -775,6 +777,13 @@ function renderFriends() {
   };
   $('#fr-add').addEventListener('click', add);
   $('#fr-q').addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
+  $('#fr-kakao').addEventListener('click', () => shareInvite({
+    title: `${me.nick}님이 '퍼즐 친구들'에 초대했어요!`,
+    text: `친구랑 같이 맞추는 온라인 조각 퍼즐이에요.\n가입한 뒤 친구맺기 코드 ${social.code} 를 넣으면 친구가 돼요.`,
+    url: config.publicUrl || location.origin,
+    imageUrl: '',
+    button: '퍼즐 친구들 가기',
+  }, config));
   $('#fr-copy').addEventListener('click', async () => toast(await copyText(social.code) ? '친구맺기 코드를 복사했어요.' : '복사가 안 됐어요. 코드를 직접 알려 주세요.'));
 
   const frPicked = new Set(); // 친구 목록에서 고른 친구들

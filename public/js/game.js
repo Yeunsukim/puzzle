@@ -1,5 +1,6 @@
 // 게임방 화면: 실시간 연결 + 퍼즐판 + 정보판 + 조각 메뉴 + 완성 축하
 import { $, $$, esc, api, toast, avatarUrl, cropRect, clock, fmtTime, loadImage, copyText, openModal } from './util.js';
+import { shareInvite, absUrl } from './share.js';
 import { Board } from './board.js';
 import { Voice } from './voice.js';
 
@@ -443,6 +444,9 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
       <p class="muted" style="margin-bottom:16px">부를 친구를 눌러서 고른 다음 <b>"부르기"</b>를 눌러 주세요. 친구가 <b>수락</b>하면 이 방으로 바로 들어와요. (한 방에 6명까지)</p>
       <div class="pick-list" id="inv-friends"></div>
       <button class="btn big wide" id="inv-send" disabled style="margin-top:14px"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> <span>친구를 골라 주세요</span></button>
+      <div class="or-line"><span>또는</span></div>
+      <button class="btn big wide kakao-btn" id="inv-kakao"><i class="fa-solid fa-comment" aria-hidden="true"></i> <span>카카오톡으로 부르기</span></button>
+      <p class="muted center" style="margin-top:8px;font-size:16px">지금 접속하지 않은 친구, 아직 가입 안 한 사람도 부를 수 있어요.</p>
       <details class="more-way" style="margin-top:22px">
         <summary>아직 친구가 아닌 사람 부르기 (링크 · 방 번호)</summary>
         <p class="muted" style="margin:10px 0 12px">이 링크를 문자나 카카오톡으로 보내 주세요. 가입하고 바로 들어올 수 있어요.</p>
@@ -497,6 +501,17 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     drawFriends();
     onSocial(drawFriends);
     state.redrawInvite = drawFriends;
+    $('#inv-kakao', bg).addEventListener('click', async () => {
+      const pic = state.snap?.picture || {};
+      const n = state.snap ? state.snap.cols * state.snap.rows : 0;
+      await shareInvite({
+        title: `${me.nick}님이 퍼즐을 같이 하재요!`,
+        text: `「${pic.title || '퍼즐'}」 ${n}조각 · 방 번호 ${code}\n링크를 누르면 바로 같이 맞출 수 있어요.`,
+        url: link,
+        imageUrl: absUrl(pic.url, config.publicUrl || location.origin),
+        button: '같이 맞추기',
+      }, config);
+    });
     $('#inv-copy', bg).addEventListener('click', async () => {
       toast(await copyText(link) ? '링크를 복사했어요! 친구에게 붙여 넣어 보내 주세요.' : '복사가 안 됐어요. 위 주소를 직접 알려 주세요.');
     });
