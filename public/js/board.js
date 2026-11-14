@@ -55,8 +55,27 @@ export class Board {
     canvas.addEventListener('pointerup', this.onUp);
     canvas.addEventListener('pointercancel', this.onCancel);
     // '놓기' 신호가 퍼즐판 밖(단추 위 등)에서 일어나도 놓치지 않게 화면 전체에서 받는다
-    this.onWinUp = e => { if (this.ptr && e.pointerId === this.ptr.id && e.target !== canvas) this.pointerUp(e, false); };
+    this.onWinUp = e => {
+      if (e.target === canvas) return; // 퍼즐판 위에서 뗀 것은 원래 처리에서 한다
+      this.touches.delete(e.pointerId);
+      if (this.pinch && this.touches.size < 2) this.pinch = null;
+      if (this.ptr && e.pointerId === this.ptr.id) this.pointerUp(e, e.type === 'pointercancel');
+    };
     window.addEventListener('pointerup', this.onWinUp, true);
+    window.addEventListener('pointercancel', this.onWinUp, true);
+    // 손가락이 퍼즐판에서 빠져나가 '놓기' 신호를 못 받은 경우 대비
+    this.onLost = e => {
+      if (!this.ptr || this.ptr.id !== e.pointerId || !this.ptr.touch) return;
+      const id = e.pointerId;
+      setTimeout(() => { if (this.ptr && this.ptr.id === id && performance.now() - this.ptr.seen > 250) this.pointerUp({ pointerId: id, clientX: this.ptr.cx, clientY: this.ptr.cy }, false); }, 300);
+    };
+    canvas.addEventListener('lostpointercapture', this.onLost);
+    // 다른 창으로 넘어가면 끄던 조각은 그 자리에 내려놓고 누르던 상태를 정리
+    this.onBlur = () => {
+      if (this.drag) { const p = this.pieces[this.drag.id]; this.drag = null; this.o.onDrop(p.id, p.x, p.y); }
+      this.ptr = null; this.pinch = null; this.touches.clear(); this.need = true;
+    };
+    window.addEventListener('blur', this.onBlur);
     canvas.addEventListener('wheel', this.onWheel, { passive: false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     // 윈도우가 알려 주는 '두 번 누르기'도 받는다 (사람마다 누르는 속도가 달라서)
@@ -96,6 +115,8 @@ export class Board {
     this.alive = false;
     this.ro.disconnect();
     window.removeEventListener('pointerup', this.onWinUp, true);
+    window.removeEventListener('pointercancel', this.onWinUp, true);
+    window.removeEventListener('blur', this.onBlur);
     window.removeEventListener('themechange', this.onTheme);
     this.debugBox?.remove();
   }
@@ -279,13 +300,25 @@ export class Board {
   // ---- 마우스/손가락 ----
   pointerDown(e) {
     if (e.button > 0) return;
-    this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    // 두 번째 손가락이 닿으면: 끌던 조각은 그 자리에 놓고 '벌려서 확대' 시작
-    if (this.touches.size >= 2) {
-      if (this.pinch) return;
-      if (this.drag) { const p = this.pieces[this.drag.id]; this.drag = null; this.o.onDrop(p.id, p.x, p.y); }
+    const now = performance.now();
+    const isTouch = e.pointerType === 'touch';
+    // 6초 넘게 소식이 없는 손가락 기록은 지운다 (화면 밖에서 떨어진 손가락 등)
+    for (const [id, t] of this.touches) if (now - t.t > 6000) this.touches.delete(id);
+    // 누르던 것이 오래 소식이 없으면(손가락이 사라짐) 정리
+    if (this.ptr && this.ptr.touch && now - this.ptr.seen > 6000) this.pointerUp({ pointerId: this.ptr.id, clientX: this.ptr.cx, clientY: this.ptr.cy }, false);
+    if (isTouch) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY, t: now });
+    if (this.pinch) return;
+    // 두 번째 손가락: 아무도 조각을 끌고 있지 않을 때만 '두 손가락 확대'
+    // (한 화면을 두 사람이 같이 쓸 때, 끌던 조각을 빼앗지 않도록)
+    if (isTouch && this.touches.size >= 2) {
+      if (this.drag || this.touches.size > 2) { this.touches.delete(e.pointerId); return; }
       this.ptr = null;
       this.startPinch();
+      return;
+    }
+    // 누군가(다른 손가락이나 마우스) 이미 누르는 중이면, 새 누르기는 잠깐 무시
+    if (this.ptr && this.ptr.id !== e.pointerId) {
+      if (isTouch) this.touches.delete(e.pointerId);
       return;
     }
     if (this.chanceMode) {
@@ -312,7 +345,7 @@ export class Board {
     const w = this.toWorld(e.clientX, e.clientY);
     const p = touch ? this.pieceNear(w.x, w.y, 22) : this.pieceAt(w.x, w.y);
     const free = p && (!p.held || p.held === this.me);
-    this.ptr = { id: e.pointerId, touch, sx: e.clientX, sy: e.clientY, cx: e.clientX, cy: e.clientY, piece: free ? p.id : -1, moved: false, cam: { ...this.cam } };
+    this.ptr = { id: e.pointerId, touch, sx: e.clientX, sy: e.clientY, cx: e.clientX, cy: e.clientY, piece: free ? p.id : -1, moved: false, cam: { ...this.cam }, seen: performance.now() };
     this.o.onPress?.();
     // 눌렀다 뗐다 → 다시 '누르는 순간': 바로 잡았다(흔들기 + 흰 테두리 + 크기). 손을 떼지 않고 그대로 끌 수 있다.
     const last = this.lastTap;
@@ -336,12 +369,14 @@ export class Board {
   }
 
   startPinch() {
+    if (this.touches.size < 2) return;
     const [a, b] = [...this.touches.values()];
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     this.pinch = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), z0: this.cam.z, world: this.toWorld(mx, my) };
   }
 
   movePinch() {
+    if (this.touches.size < 2 || !this.pinch) return;
     const [a, b] = [...this.touches.values()];
     const r = this.c.getBoundingClientRect();
     const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
@@ -355,7 +390,8 @@ export class Board {
   pointerMove(e) {
     // 마우스 단추가 이미 떼어져 있는데 끄는 중으로 남아 있으면 놓은 것으로 처리
     if (this.ptr && e.pointerType === 'mouse' && e.pointerId === this.ptr.id && e.buttons === 0 && this.ptr.moved) { this.pointerUp(e, false); return; }
-    if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now() });
+    if (this.ptr && this.ptr.id === e.pointerId) this.ptr.seen = performance.now();
     if (this.chanceMode) {
       const w = this.toWorld(e.clientX, e.clientY);
       const cell = this.inFrameAt(w.x, w.y) ? Math.min(this.rows - 1, Math.floor(w.y / this.S)) * this.cols + Math.min(this.cols - 1, Math.floor(w.x / this.S)) : -1;
@@ -363,7 +399,7 @@ export class Board {
       this.c.style.cursor = cell >= 0 ? 'crosshair' : 'default';
       return;
     }
-    if (this.pinch) { if (this.touches.size >= 2) this.movePinch(); return; }
+    if (this.pinch) { if (this.touches.size >= 2) this.movePinch(); else this.pinch = null; return; }
     const now = performance.now();
     const w = this.toWorld(e.clientX, e.clientY);
     if (now - this.lastCursorSent > 90) { this.lastCursorSent = now; this.o.onCursor?.(w.x, w.y); }
@@ -484,6 +520,7 @@ export class Board {
   // ---- 매 화면마다 ----
   step() {
     let anim = false;
+    if (this.ptr && this.ptr.touch && performance.now() - this.ptr.seen > 15000) this.pointerUp({ pointerId: this.ptr.id, clientX: this.ptr.cx, clientY: this.ptr.cy }, false);
     // 끄는 중 화면 가장자리에 가까우면 화면이 따라 움직인다
     if (this.drag && this.ptr) {
       const r = this.c.getBoundingClientRect(), edge = 50, sp = 12;
