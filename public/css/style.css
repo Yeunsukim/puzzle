@@ -765,3 +765,15 @@ button, input, select { font: inherit; color: inherit; }
 .ribbon.plain { background: #EDE6D8; color: #5A4632; font-size: 15px; padding: 4px 13px; }
 .pl-rank.plain { color: #7A6450; }
 .exhibit:has(.frame-plain) .placard { border-top-color: #B9A88F; }
+
+/* 친구 목록: 게임 중이면 '찾아가기' 단추 */
+.fr-row { display: flex; flex-direction: column; gap: 8px; }
+.fr-row .pick-row { flex: 1; min-width: 0; }
+.fr-row .fr-go { align-self: stretch; white-space: nowrap; }
+.pick-row .nm small .st2 { display: block; }
+.pick-row .nm small b.playing { color: #2E9C8F; font-weight: 700; }
+.dot.on.play { background: #E2A13A; }
+@media (max-width: 760px) {
+  .fr-row { flex-direction: column; }
+  .fr-row .fr-go { align-self: stretch; }
+}

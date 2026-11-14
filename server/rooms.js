@@ -16,6 +16,17 @@ const chanceInfo = room => {
 export const COLORS = ['#E2725B', '#2779A7', '#2E9C8F', '#C9A45C', '#7E62C9', '#D9568C'];
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const live = new Map();          // 지금 메모리에 올라와 있는 방들
+// 친구 목록에 '지금 어느 방에서 게임 중인지' 알려 주기
+let presenceHook = () => {};
+export const onPresence = fn => { presenceHook = fn; };
+export function roomOfUser(uid) {
+  for (const r of live.values()) {
+    if (r.online.has(uid) && !r.state.finishedAt) {
+      return { code: r.code, title: r.picture.title, pieces: r.cols * r.rows, players: r.online.size, full: r.online.size >= MAX_PLAYERS };
+    }
+  }
+  return null;
+}
 
 const shuffle = a => {
   for (let i = a.length - 1; i > 0; i--) {
@@ -229,6 +240,7 @@ function summary(room) {
 async function finish(room) {
   const st = room.state;
   st.finishedAt = Date.now();
+  for (const id of room.online.keys()) presenceHook(id); // 다 맞췄으니 '게임 중'이 아님
   const sum = summary(room);
   sum.score = scoreOf(sum.pieces, sum.seconds);
   await (async () => {
@@ -319,6 +331,7 @@ export function attachSockets(io) {
         const color = prev && !used.has(prev) ? prev : (COLORS.find(c => !used.has(c)) || COLORS[0]);
         o = { uid, nick: user.nick, avatar: user.avatar, color, sockets: new Set() };
         r.online.set(uid, o);
+        presenceHook(uid);
       }
       o.sockets.add(socket.id);
       if (!r.state.finishedAt) {
@@ -461,7 +474,7 @@ export function attachSockets(io) {
       const o = room.online.get(uid);
       if (o) {
         o.sockets.delete(socket.id);
-        if (o.sockets.size === 0) room.online.delete(uid);
+        if (o.sockets.size === 0) { room.online.delete(uid); presenceHook(uid); }
       }
       // 마지막 사람이 나가면 시계를 멈춘다
       if (room.online.size === 0 && !room.state.finishedAt && room.state.startedAt && !room.state.pausedAt) {

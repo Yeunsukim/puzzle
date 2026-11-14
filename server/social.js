@@ -2,7 +2,7 @@
 import crypto from 'node:crypto';
 import { db, ah } from './db.js';
 import { requireUser } from './auth.js';
-import { roomInfo } from './rooms.js';
+import { roomInfo, roomOfUser, onPresence } from './rooms.js';
 
 let io = null;
 const onlineCount = new Map(); // uid -> 열려 있는 연결 수
@@ -26,7 +26,11 @@ export async function friendCode(uid) {
   }
 }
 
-const person = u => ({ id: u.id, nick: u.nick, avatar: u.avatar, online: isOnline(u.id) });
+const person = u => ({ id: u.id, nick: u.nick, avatar: u.avatar, online: isOnline(u.id), room: isOnline(u.id) ? roomOfUser(u.id) : null });
+// 내 상태(접속·게임 중인 방)가 바뀌면 친구들 화면을 새로 그리게 한다
+const tellFriendsOf = uid => db.all('SELECT friend_id FROM friends WHERE user_id = ?', uid)
+  .then(rows => { for (const f of rows) notify(f.friend_id, 'social', { type: 'presence' }); })
+  .catch(() => {});
 const areFriends = async (a, b) => !!(await db.get('SELECT 1 AS x FROM friends WHERE user_id = ? AND friend_id = ?', a, b));
 async function makeFriends(a, b) {
   const now = Date.now();
@@ -157,14 +161,13 @@ export function socialRoutes(app) {
 // 실시간 연결마다: 내 알림 받는 방에 넣고, 친구들에게 접속했다고 알려 준다
 export function attachSocial(ioServer) {
   io = ioServer;
+  onPresence(tellFriendsOf);
   io.on('connection', socket => {
     const uid = socket.data.user.id;
     socket.join('u:' + uid);
     const before = onlineCount.get(uid) || 0;
     onlineCount.set(uid, before + 1);
-    const tellFriends = () => db.all('SELECT friend_id FROM friends WHERE user_id = ?', uid)
-      .then(rows => { for (const f of rows) notify(f.friend_id, 'social', { type: 'presence' }); })
-      .catch(() => {});
+    const tellFriends = () => tellFriendsOf(uid);
     if (before === 0) tellFriends();
     socket.on('disconnect', () => {
       const n = (onlineCount.get(uid) || 1) - 1;

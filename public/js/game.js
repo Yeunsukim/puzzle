@@ -471,7 +471,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
         return `<button class="pick-row ${on ? 'on' : ''}" data-pick="${f.id}" ${inRoom ? 'disabled' : ''} aria-pressed="${on}">
           <span class="ck"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
           <span class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></span>
-          <span class="nm">${esc(f.nick)}<small>${inRoom ? '이미 이 방에 있어요' : sentTo.has(f.id) ? '불렀어요 · 다시 부를 수 있어요' : f.online ? '지금 접속 중' : '쉬는 중 · 다음에 들어오면 알림이 보여요'}</small></span>
+          <span class="nm">${esc(f.nick)}<small>${inRoom ? '이미 이 방에 있어요' : sentTo.has(f.id) ? '불렀어요 · 다시 부를 수 있어요' : f.online ? (f.room ? `지금 접속 중 · 다른 방에서 게임 중 (${f.room.code})` : '지금 접속 중 · 대기 중') : '쉬는 중 · 다음에 들어오면 알림이 보여요'}</small></span>
         </button>`;
       }).join('')
         : '<p class="muted" style="padding:14px 0">아직 친구가 없어요. 왼쪽 위 메뉴 → 친구에서 친구를 추가하거나, 아래 링크를 보내 주세요.</p>';

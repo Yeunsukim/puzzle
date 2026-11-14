@@ -82,6 +82,13 @@ function afterLogin() {
   go('/home');
 }
 
+// 친구 상태: 쉬는 중 / 지금 접속 중 · 대기 중 / 지금 접속 중 · 게임 중 (방 번호)
+export function friendStatus(f) {
+  if (!f.online) return '쉬는 중';
+  if (!f.room) return '지금 접속 중 · 대기 중';
+  return `지금 접속 중 · <b class="playing">게임 중 (${f.room.code})</b><span class="st2">「${esc(f.room.title)}」 ${f.room.pieces}조각 · ${f.room.players}/6명</span>`;
+}
+
 // 친구에게 보낼 게임방 주소: 인터넷 주소 → 같은 와이파이 주소 → 지금 주소
 export function inviteLink(code) {
   const local = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -813,10 +820,11 @@ function renderFriends() {
     const fr = [...social.friends].sort((a, b) => (b.online - a.online) || a.nick.localeCompare(b.nick));
     h += `<div class="card"><h3 style="margin-bottom:6px">내 친구 ${social.friends.length}명</h3>
       ${fr.length ? `<p class="muted" style="margin-bottom:12px;font-size:17px">친구를 눌러서 고른 다음, 아래 단추를 눌러 주세요.</p>
-        <div class="pick-list">${fr.map(f => `<button class="pick-row ${frPicked.has(f.id) ? 'on' : ''}" data-frpick="${f.id}" aria-pressed="${frPicked.has(f.id)}">
+        <div class="pick-list">${fr.map(f => `<div class="fr-row"><button class="pick-row ${frPicked.has(f.id) ? 'on' : ''}" data-frpick="${f.id}" aria-pressed="${frPicked.has(f.id)}">
           <span class="ck"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-          <span class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></span>
-          <span class="nm">${esc(f.nick)}<small>${f.online ? '지금 접속 중' : '쉬는 중'}</small></span></button>`).join('')}</div>
+          <span class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? (f.room ? 'on play' : 'on') : ''}"></span></span>
+          <span class="nm">${esc(f.nick)}<small>${friendStatus(f)}</small></span></button>
+          ${f.room ? `<button class="btn fr-go" data-go="${f.room.code}" ${f.room.full ? 'disabled' : ''}><i class="fa-solid fa-door-open" aria-hidden="true"></i> ${f.room.full ? '방이 꽉 찼어요' : '찾아가기'}</button>` : ''}</div>`).join('')}</div>
         <div class="pick-bar">
           <button class="btn" id="fr-invite" ${frPicked.size ? '' : 'disabled'}><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 고른 친구 부르기</button>
           <button class="btn danger" id="fr-remove" ${frPicked.size ? '' : 'disabled'}><i class="fa-solid fa-user-minus" aria-hidden="true"></i> 고른 친구 빼기${frPicked.size ? ` (${frPicked.size}명)` : ''}</button>
@@ -825,6 +833,7 @@ function renderFriends() {
     if (social.sent.length) h += `<div class="card"><h3 style="margin-bottom:6px">수락을 기다리는 신청</h3>${social.sent.map(s => personRow(s.to, `<button class="btn line" data-act="req-cancel" data-id="${s.id}"><i class="fa-solid fa-xmark" aria-hidden="true"></i> 신청 취소</button>`, '수락을 기다리는 중')).join('')}</div>`;
     if (social.recent.length) h += `<div class="card"><h3 style="margin-bottom:6px">같이 퍼즐을 맞췄던 사람</h3>${social.recent.map(p => personRow(p, social.sent.some(s => s.to.id === p.id) ? '<span class="muted">신청함</span>' : `<button class="btn teal" data-act="friend-add" data-id="${p.id}"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> 친구 신청</button>`)).join('')}</div>`;
     $('#fr-lists').innerHTML = h;
+    $$('[data-go]').forEach(b => b.addEventListener('click', () => go('/room/' + b.dataset.go)));
     $$('[data-frpick]').forEach(b => b.addEventListener('click', () => {
       const id = Number(b.dataset.frpick);
       if (frPicked.has(id)) frPicked.delete(id); else frPicked.add(id);
