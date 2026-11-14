@@ -328,6 +328,7 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
     for (const o of online) if (!all.some(a => a.uid === o.uid)) all.push(o);
     all.sort((a, b) => (onIds.has(b.uid) - onIds.has(a.uid)) || ((scores[b.uid] || 0) - (scores[a.uid] || 0)));
     $('#g-pn').textContent = online.length;
+    if (state.board) updateMiniStat(); // 왼쪽 위 짧은 상태에도 인원 반영
     const inVoice = new Set((state.voicePeers || []).map(v => v.uid));
     const talking = uid => state.speaking?.has(uid === me.id ? 'me' : uid);
     $('#g-players').innerHTML = all.map(p => {
@@ -363,7 +364,8 @@ export async function openRoom(root, code, { me, config, go, openDrawer, getSoci
   // 정보판을 접었을 때 보이는 짧은 상태: 걸린 시간 · 맞춘 조각
   function updateMiniStat() {
     if (!state.board) return;
-    $('#g-mini-stat').textContent = `${$('#g-time').textContent} · ${state.board.lockedCount}/${state.board.pieces.length}조각`;
+    const people = state.players.online.length || 1;
+    $('#g-mini-stat').innerHTML = `${esc($('#g-time').textContent)} · ${state.board.lockedCount}/${state.board.pieces.length}조각 · <span class="mini-people" title="지금 이 방에 있는 사람"><i class="fa-solid fa-user-group" aria-hidden="true"></i> ${people}명</span>`;
   }
 
   // ---- 조각 메뉴 ----

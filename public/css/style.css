@@ -777,3 +777,7 @@ button, input, select { font: inherit; color: inherit; }
   .fr-row { flex-direction: column; }
   .fr-row .fr-go { align-self: stretch; }
 }
+
+/* 게임 화면 왼쪽 위: 지금 이 방에 있는 사람 수 */
+.mini-people { white-space: nowrap; }
+.mini-people .fa-user-group { font-size: .9em; margin-right: 2px; color: #2E9C8F; }
