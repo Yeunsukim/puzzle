@@ -1,7 +1,7 @@
 // 여러 화면에서 같이 쓰는 도구들
 
 // 화면 코드 버전 (메뉴 맨 아래에 보여요. 새 코드가 들어왔는지 확인할 때 써요)
-export const VERSION = '11월 15일 · 4번';
+export const VERSION = '11월 15일 · 5번';
 
 export const AVATARS = [
   { id: 'bunny', name: '토끼' },
@@ -41,15 +41,21 @@ export function openModal(html, { onClose, sticky } = {}) {
 }
 
 export const COUNTS = [
-  // 96 다음부터는 가로:세로가 4:3 인 칸 수 (16×12, 20×15, 24×18, 36×27)
+  // 96 다음부터는 가로:세로가 4:3 (또는 4:3에 가장 가까운) 칸 수
+  // 16×12, 18×14, 20×15, 24×18, 28×21, 30×22, 32×24, 33×25, 36×27
   { n: 6, label: '아이 · 아주 쉬움' },
   { n: 12, label: '아이 · 쉬움' },
   { n: 24, label: '쉬움' },
   { n: 48, label: '보통' },
   { n: 96, label: '조금 어려움' },
   { n: 192, label: '어려움' },
+  { n: 252, label: '꽤 어려움' },
   { n: 300, label: '아주 어려움' },
   { n: 432, label: '도전' },
+  { n: 588, label: '큰 도전' },
+  { n: 660, label: '더 큰 도전' },
+  { n: 768, label: '고수' },
+  { n: 825, label: '최고 고수' },
   { n: 972, label: '어른 · 최고 도전!' },
 ];
 
@@ -85,6 +91,9 @@ export function gridFor(n, aspect) {
   // 96보다 큰 조각 수는 항상 가로:세로 4:3 (세로 사진이면 3:4)
   const k = Math.sqrt(n / 12);
   if (n > 96 && Number.isInteger(k)) return aspect >= 1 ? { cols: 4 * k, rows: 3 * k } : { cols: 3 * k, rows: 4 * k };
+  // 정확한 4:3 칸이 없는 조각 수는 4:3에 가장 가까운 칸으로 정해 둔다
+  const NEAR = { 252: [18, 14], 660: [30, 22], 825: [33, 25] };
+  if (NEAR[n]) { const [a, b] = NEAR[n]; return aspect >= 1 ? { cols: a, rows: b } : { cols: b, rows: a }; }
   let best = null;
   for (let rows = 2; rows <= n / 2; rows++) {
     if (n % rows) continue;

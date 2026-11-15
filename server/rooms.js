@@ -6,7 +6,7 @@ import { rankOf, scoreOf } from './ranking.js';
 export const S = 100;            // 한 칸(조각) 크기 = 100 (게임판 단위)
 export const MAX_PLAYERS = 6;    // 나 + 친구 5명
 // 찬스(자동으로 한 조각 맞춰 주기) 개수: 조각 수 단계마다 1개씩
-const CHANCE_STEPS = [48, 96, 192, 300, 432, 972];
+const CHANCE_STEPS = [48, 96, 192, 252, 300, 432, 588, 660, 768, 825, 972]; // 조각 수 단계마다 찬스 1개씩
 export const chancesFor = n => CHANCE_STEPS.filter(x => n >= x).length;
 const chanceInfo = room => {
   const total = room.state.chances?.total ?? chancesFor(room.cols * room.rows);

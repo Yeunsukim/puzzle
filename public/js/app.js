@@ -373,7 +373,7 @@ function renderLogin(mode = 'login') {
       <div>
         <span class="eyebrow">함께 맞추는 온라인 퍼즐</span>
         <h1 style="margin:16px 0 18px">한 조각씩,<br>함께 완성해요</h1>
-        <p class="lead">멀리 있는 친구와 가족을 초대해 하나의 그림을 같이 맞춰 보세요. 10조각부터 1000조각까지 고를 수 있어요.</p>
+        <p class="lead">멀리 있는 친구와 가족을 초대해 하나의 그림을 같이 맞춰 보세요. 6조각부터 972조각까지 고를 수 있어요.</p>
       </div>
       ${fan(ART)}
     </section>
@@ -506,7 +506,7 @@ async function renderHome() {
     <section class="section">
       <div class="section-head"><div><span class="eyebrow">이용 방법</span><h2 style="margin-top:8px">세 걸음이면 충분해요</h2></div></div>
       <div class="feature-grid">
-        <div class="feature"><div class="num">01</div><h3>그림 고르기</h3><p>준비된 작품이나 내 사진을 고르고, 10조각부터 1000조각까지 정해요.</p></div>
+        <div class="feature"><div class="num">01</div><h3>그림 고르기</h3><p>준비된 작품이나 내 사진을 고르고, 6조각부터 972조각까지 정해요.</p></div>
         <div class="feature"><div class="num">02</div><h3>친구 초대하기</h3><p>친구 목록에서 초대를 보내거나 링크를 보내요. 친구가 수락하면 바로 들어와요.</p></div>
         <div class="feature"><div class="num">03</div><h3>함께 완성하기</h3><p>조각을 끌어다 놓고, 누르면 돌릴 수 있어요. 다 맞추면 기록이 남아요.</p></div>
       </div>
