@@ -781,3 +781,9 @@ button, input, select { font: inherit; color: inherit; }
 /* 게임 화면 왼쪽 위: 지금 이 방에 있는 사람 수 */
 .mini-people { white-space: nowrap; }
 .mini-people .fa-user-group { font-size: .9em; margin-right: 2px; color: #2E9C8F; }
+
+/* 홈 친구 칸: 게임 중이면 방 번호와 찾아가기 */
+.fchip small { display: block; }
+.fchip small b.playing { color: #2E9C8F; font-weight: 700; }
+.fchip .fc-sub { font-size: 14px; }
+.fchip .fchip-go { margin-top: 8px; width: 100%; padding-left: 8px; padding-right: 8px; }

@@ -89,6 +89,15 @@ export function friendStatus(f) {
   return `지금 접속 중 · <b class="playing">게임 중 (${f.room.code})</b><span class="st2">「${esc(f.room.title)}」 ${f.room.pieces}조각 · ${f.room.players}/6명</span>`;
 }
 
+// 홈 화면 친구 칸: 쉬는 중 / 대기 중 / 게임 중(방 번호) + 찾아가기
+function homeChip(f) {
+  const dot = f.online ? (f.room ? 'on play' : 'on') : '';
+  const head = `<div class="fchip"><div class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${dot}"></span></div><span>${esc(f.nick)}</span>`;
+  if (!f.room) return head + `<small>${f.online ? '대기 중' : '쉬는 중'}</small></div>`;
+  return head + `<small><b class="playing">게임 중</b> · ${f.room.code}</small><small class="fc-sub">${f.room.pieces}조각 · ${f.room.players}/6명</small>
+    <button class="btn small fchip-go" data-go="${f.room.code}" ${f.room.full ? 'disabled' : ''}><i class="fa-solid fa-door-open" aria-hidden="true"></i> ${f.room.full ? '꽉 찼어요' : '찾아가기'}</button></div>`;
+}
+
 // 친구에게 보낼 게임방 주소: 인터넷 주소 → 같은 와이파이 주소 → 지금 주소
 export function inviteLink(code) {
   const local = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -491,7 +500,7 @@ async function renderHome() {
       <div class="gallery" id="home-gallery"></div>
     </section>
     <section class="section">
-      <div class="section-head"><div><span class="eyebrow">친구</span><h2 style="margin-top:8px">함께하는 친구들</h2><p>초록 점이 있는 친구는 지금 접속해 있어요.</p></div><a class="btn line" href="#/friends"><i class="fa-solid fa-user-group" aria-hidden="true"></i> 친구 관리</a></div>
+      <div class="section-head"><div><span class="eyebrow">친구</span><h2 style="margin-top:8px">함께하는 친구들</h2><p>초록 점은 지금 접속 중, 주황 점은 게임 중이에요. 게임 중인 친구는 찾아가기로 바로 함께할 수 있어요.</p></div><a class="btn line" href="#/friends"><i class="fa-solid fa-user-group" aria-hidden="true"></i> 친구 관리</a></div>
       <div id="home-friends"></div>
     </section>
     <section class="section">
@@ -523,11 +532,13 @@ async function renderHome() {
     if (!inv) return;
     inv.innerHTML = social.invites.length ? `<div class="invite-strip"><div class="card"><h3>받은 초대 ${social.invites.length}개</h3><div class="invite-row">${noteCards('invites')}</div></div></div>` : '';
     $('#home-friends').innerHTML = social.friends.length
-      ? `<div class="friends-strip">${social.friends.map(f => `<div class="fchip"><div class="av"><img src="${avatarUrl(f.avatar)}" alt=""><span class="dot ${f.online ? 'on' : ''}"></span></div><span>${esc(f.nick)}</span><small>${f.online ? '접속 중' : '쉬는 중'}</small></div>`).join('')}</div>`
+      ? `<div class="friends-strip">${[...social.friends].sort((x, y) => (!!y.room - !!x.room) || (y.online - x.online)).map(homeChip).join('')}</div>`
       : `<div class="card row" style="justify-content:space-between"><div><h3>아직 친구가 없어요</h3><p class="muted">친구의 이메일이나 친구맺기 코드로 친구를 추가해 보세요.</p></div><a class="btn" href="#/friends">친구 추가하기</a></div>`;
   };
   socialListeners.add(drawSocial);
   drawSocial();
+  // 게임 중인 친구 '찾아가기'
+  $('#home-friends').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b && !b.disabled) go('/room/' + b.dataset.go); });
   refreshSocial();
 
   hallOfFame($('#home-hall'));
