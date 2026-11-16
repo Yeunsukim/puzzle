@@ -808,3 +808,6 @@ button, input, select { font: inherit; color: inherit; }
   .mini span { display: none; }
   .zoom { gap: 6px; }
 }
+
+/* 참가자 목록: 나간 사람 표시 */
+.players li .left-tag { font-size: 13px; font-weight: 700; color: var(--ink-3); background: var(--paper-2); border-radius: 999px; padding: 1px 8px; margin-left: 4px; }

@@ -15,10 +15,41 @@ export class Voice {
     this.speaking = new Set();
     this.ctx = null;
     this.timer = 0;
+    this.retries = new Map(); // 상대 uid -> 다시 건 횟수
 
     socket.on('voice-signal', m => this.onSignal(m));
     socket.on('voice-left', ({ sid }) => this.drop(sid));
-    socket.on('disconnect', () => { if (this.on) { this.stop(true); this.hooks.onLost?.(); } });
+    socket.on('disconnect', reason => {
+      if (!this.on) return;
+      if (reason === 'io client disconnect') { this.stop(true); return; } // 방에서 나감
+      // 인터넷이 잠깐 끊김: 마이크는 켜 둔 채로 연결만 정리하고, 다시 붙으면 rejoin() 으로 이어 준다
+      for (const sid of [...this.peers.keys()]) this.drop(sid, true);
+      this.waiting = true;
+      this.hooks.onChange?.();
+    });
+    // 휴대폰 등에서 소리 재생이 막혔으면, 화면을 한 번 누를 때 다시 틀어 준다
+    this.unlock = () => {
+      if (!this.on) return;
+      this.ctx?.resume?.().catch(() => {});
+      for (const p of this.peers.values()) if (p.audio && p.audio.paused) p.audio.play().catch(() => {});
+    };
+    document.addEventListener('pointerdown', this.unlock, { passive: true });
+  }
+
+  // 인터넷이 다시 연결된 뒤 (게임방에 다시 들어간 다음) 음성 대화를 다시 잇는다
+  rejoin() {
+    if (!this.on) return;
+    this.waiting = false;
+    this.retries.clear();
+    this.socket.emit('voice-join', list => {
+      for (const p of list || []) this.call(p.sid, p.uid);
+    });
+    this.hooks.onChange?.();
+  }
+
+  destroy() {
+    this.stop(true);
+    document.removeEventListener('pointerdown', this.unlock);
   }
 
   static supported() {
@@ -37,6 +68,8 @@ export class Voice {
     } finally { this.starting = false; }
     this.on = true;
     this.muted = false;
+    this.waiting = false;
+    this.retries.clear();
     this.myAnalyser = this.makeAnalyser(this.stream);
     this.timer = setInterval(() => this.measure(), 150);
     this.socket.emit('voice-join', list => {
@@ -48,6 +81,7 @@ export class Voice {
   stop(silent) {
     if (!this.on) return;
     this.on = false;
+    this.waiting = false;
     clearInterval(this.timer);
     for (const sid of [...this.peers.keys()]) this.drop(sid, true);
     this.stream?.getTracks().forEach(t => t.stop());
@@ -71,9 +105,9 @@ export class Voice {
     this.hooks.onChange?.();
   }
 
-  peer(sid, uid) {
+  peer(sid, uid, caller = false) {
     const pc = new RTCPeerConnection({ iceServers: this.ice });
-    const entry = { uid, pc, audio: null, pending: [], analyser: null };
+    const entry = { uid, pc, audio: null, pending: [], analyser: null, caller, badSince: 0 };
     this.peers.set(sid, entry);
     for (const t of this.stream.getTracks()) pc.addTrack(t, this.stream);
     pc.onicecandidate = e => { if (e.candidate) this.signal(sid, { cand: e.candidate }); };
@@ -93,17 +127,40 @@ export class Voice {
     };
     pc.oniceconnectionstatechange = () => this.hooks.onChange?.();
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed') this.hooks.onFail?.(uid);
+      const st = pc.connectionState;
+      if (st === 'connected') { entry.badSince = 0; this.retries.delete(uid); }
+      if (st === 'failed') this.recover(sid);
+      if (st === 'disconnected') {
+        // 잠깐 끊김은 저절로 돌아오는 경우가 많다. 6초 넘게 이어지면 다시 건다
+        entry.badSince = Date.now();
+        setTimeout(() => { if (this.peers.get(sid) === entry && entry.pc.connectionState === 'disconnected') this.recover(sid); }, 6000);
+      }
       this.hooks.onChange?.();
     };
     return entry;
   }
 
+  // 연결이 실패한 친구와 다시 연결한다 (처음 연결을 건 쪽이 다시 건다, 3번까지)
+  recover(sid) {
+    const p = this.peers.get(sid);
+    if (!p || !this.on) return;
+    const uid = p.uid, caller = p.caller;
+    this.drop(sid, true);
+    if (!caller) { this.hooks.onChange?.(); return; } // 상대가 다시 걸어 온다
+    const n = (this.retries.get(uid) || 0) + 1;
+    this.retries.set(uid, n);
+    if (n > 3) { this.hooks.onFail?.(uid); this.hooks.onChange?.(); return; }
+    setTimeout(() => this.call(sid, uid), 800 * n);
+    this.hooks.onChange?.();
+  }
+
   async call(sid, uid) {
     if (!this.on || this.peers.has(sid)) return;
-    const { pc } = this.peer(sid, uid);
-    await pc.setLocalDescription(await pc.createOffer());
-    this.signal(sid, { sdp: pc.localDescription });
+    const { pc } = this.peer(sid, uid, true);
+    try {
+      await pc.setLocalDescription(await pc.createOffer());
+      this.signal(sid, { sdp: pc.localDescription });
+    } catch (err) { console.warn('음성 연결 걸기 문제:', err); }
   }
 
   async onSignal({ from, uid, data }) {
@@ -111,6 +168,8 @@ export class Voice {
     let entry = this.peers.get(from);
     try {
       if (data.sdp) {
+        // 상대가 새로 걸어 온 연결(다시 걸기 포함)이면 예전 연결은 버리고 새로 받는다
+        if (entry && data.sdp.type === 'offer') { this.drop(from, true); entry = null; }
         if (!entry) entry = this.peer(from, uid);
         const { pc } = entry;
         await pc.setRemoteDescription(data.sdp);
